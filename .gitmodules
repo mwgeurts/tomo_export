@@ -1,0 +1,6 @@
+[submodule "dicom_tools"]
+	path = dicom_tools
+	url = https://github.com/mwgeurts/dicom_tools
+[submodule "tomo_extract"]
+	path = tomo_extract
+	url = https://github.com/mwgeurts/tomo_extract
