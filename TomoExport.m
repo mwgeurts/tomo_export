@@ -122,22 +122,28 @@ end
 set(handles.version_text, 'String', sprintf('Version %s', handles.version));
 
 % Disable plan selection dropdown (Patient data must be loaded first)
+set(handles.plan_select, 'String', 'Select Patient Plan');
 set(handles.plan_select, 'Enable', 'off');
 
 % Disable image viewer
-%
-%
-%
-%
+set(allchild(handles.dose_axes), 'visible', 'off'); 
+set(handles.dose_axes, 'visible', 'off');
+colorbar(handles.dose_axes, 'off');
+
+% Disable dose slider/TCS/alpha
+set(handles.dose_slider, 'visible', 'off');
+set(handles.tcs_button, 'visible', 'off');
+set(handles.alpha, 'visible', 'off');
 
 % Disable info table and export button (Patient data must be loaded first)
 set(handles.dicom_button, 'Enable', 'off');
 set(handles.plan_info, 'Enable', 'off');
+set(handles.plan_info, 'Data', cell(14, 2));
 
 %% Initialize global variables
 % Default folder path when selecting input files
-handles.path = userpath;
-Event(['Default file path set to ', handles.path]);
+handles.userpath = userpath;
+Event(['Default file path set to ', handles.userpath]);
 
 % Initialize unit test flag to false (don't run in Unit Test mode)
 handles.unitflag = 0;
@@ -170,7 +176,7 @@ function varargout = TomoExport_OutputFcn(~, ~, handles)
 varargout{1} = handles.output;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function archive_file_Callback(~, ~, ~)
+function archive_file_Callback(~, ~, ~) %#ok<*DEFNU>
 % hObject    handle to archive_file (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -198,39 +204,175 @@ Event('Archive browse button selected');
 
 % Request the user to select the Daily QA DICOM or XML
 Event('UI window opened to select file');
-[name, path] = uigetfile({'*_patient.xml', 'Patient Archive (*.xml)'}, ...
-    'Select the Archive Patient XML File', handles.path);
+[handles.name, handles.path] = uigetfile({'*_patient.xml', ...
+    'Patient Archive (*.xml)'}, 'Select the Archive Patient XML File', ...
+    handles.userpath);
     
 % If the user selected a file
-if ~isequal(name, 0)
+if ~isequal(handles.name, 0)
     
     % Update default path
-    handles.path = path;
-    Event(['Default file path updated to ', path]);
+    handles.userpath = handles.path;
+    Event(['Default file path updated to ', handles.path]);
     
     % Update archive_file text box
-    set(handles.archive_file, 'String', fullfile(path, name));
+    set(handles.archive_file, 'String', ...
+        fullfile(handles.path, handles.name));
        
- 
+    % Find plan version
+    handles.version = FindVersion(handles.path, handles.name);
     
+    % If the version is 4.X or later
+    if str2double(handles.version(1)) >= 4
     
+        % Retrieve all approved plan plan UIDs
+        handles.planUIDs = FindPlans(handles.path, handles.name);
+        
+        % Update plan dropdown menu
+        set(handles.plan_select, 'String', handles.planUIDs);
+        
+        % If at least 1 plan was found
+        if length(handles.planUIDs) >= 1
+            
+            % Update selected plan
+            set(handles.plan_select, 'Value', 1);
+            
+            % Enable dropdown menu
+            set(handles.plan_select, 'enable', 'on');
+            
+            % Execute plan_select
+            handles = ...
+                plan_select_Callback(handles.plan_select, '', handles);
+        
+        % Otherwise 
+        else
+            
+            % Warn user that this application does not currently support v3
+            Event('No approved plans were found in the provided archive', ...
+                'ERROR');
+        end
+        
+    % If the version is 3.X
+    elseif str2double(handles.version(1)) == 3
+        
+        % Warn user that this application does not currently support v3
+        Event('Version 3 archives are not currently supported', 'ERROR');
+        
+    % If the version is 2.X
+    elseif str2double(handles.version(1)) == 2
+        
+        % Warn user that this application does not currently support v2
+        Event('Version 2 archives are not currently supported', 'ERROR');
+    end
     
 % Otherwise the user did not select a file
 else
     Event('No archive file was selected');
 end
 
-% Clear temporary variables
-clear name path;
-
 % Update handles structure
 guidata(hObject, handles);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function plan_select_Callback(hObject, eventdata, handles)
+function varargout = plan_select_Callback(hObject, ~, handles)
 % hObject    handle to plan_select (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+% Log selected plan UID
+Event(sprintf('Plan UID %s selected to load', ...
+    handles.planUIDs{get(hObject, 'Value')}));
+
+% Start waitbar
+progress = waitbar(0, 'Loading CT Image');
+
+% If the version is 4.X or later
+if str2double(handles.version(1)) >= 4
+
+    % Retrieve CT 
+    handles.image = LoadImage(handles.path, handles.name, ...
+        handles.planUIDs{get(hObject, 'Value')});
+    
+    % Update progress bar
+    waitbar(0.2, progress, 'Loading Delivery Plan');
+
+    % Retrieve Plan 
+    handles.plan = LoadPlan(handles.path, handles.name, ...
+        handles.planUIDs{get(hObject, 'Value')});
+    
+    % Update progress bar
+    waitbar(0.4, progress, 'Loading Structure Sets');
+    
+    % Retrieve Structures
+    handles.image.structures = LoadStructures(handles.path, handles.name, ...
+        handles.image);
+    
+    % Update progress bar
+    waitbar(0.6, progress, 'Loading Dose Image');
+    
+    % Retrieve Dose
+    handles.dose = LoadPlanDose(handles.path, handles.name, ...
+        handles.planUIDs{get(hObject, 'Value')});
+    
+% If the version is 3.X
+elseif str2double(handles.version(1)) == 3
+
+
+
+% If the version is 2.X
+elseif str2double(handles.version(1)) == 2
+
+
+end
+
+% Update progress bar
+waitbar(0.8, progress, 'Updating Display');
+
+% Update plan information table
+data = {    
+    'Patient Name'      handles.plan.patientName
+    'Patient ID'        handles.plan.patientID
+    'Birth Date'        handles.plan.patientBirthDate
+    'Gender'            handles.plan.patientSex
+    'Plan Name'         handles.plan.planLabel
+    'Plan Type'         handles.plan.planType
+};
+set(handles.plan_info, 'Data', data);
+set(handles.plan_info, 'Enable', 'on');
+
+% Initialize Dose Viewer
+InitializeViewer(handles.dose_axes, handles.tcsview, ...
+    sscanf(get(handles.alpha, 'String'), '%f%%')/100, handles.image, ...
+    handles.dose, handles.dose_slider);
+
+% Enable dose slider/TCS/alpha
+set(handles.dose_slider, 'visible', 'on');
+set(handles.tcs_button, 'visible', 'on');
+set(handles.alpha, 'visible', 'on');
+
+% Update waitbar
+waitbar(1.0, progress, 'Plan load completed');
+
+% Close waitbar
+close(progress);
+
+% Clear temporary variables
+clear progress;
+
+% Enable DICOM export button
+set(handles.dicom_button, 'Enable', 'on');
+
+% If called through the UI, and not another function
+if nargout == 0
+    
+    % Update handles structure
+    guidata(hObject, handles);
+    
+else
+    
+    % Otherwise return the modified handles
+    varargout{1} = handles;
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function plan_select_CreateFcn(hObject, ~, ~)
@@ -339,13 +481,15 @@ switch handles.tcsview
 end
 
 % Re-initialize image viewer with new T/C/S value
-handles = UpdateDoseDisplay(handles);
+InitializeViewer(handles.dose_axes, handles.tcsview, ...
+    sscanf(get(handles.alpha, 'String'), '%f%%')/100, handles.image, ...
+    handles.dose, handles.dose_slider);
 
 % Update handles structure
 guidata(hObject, handles);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function dicom_button_Callback(~, ~, handles)
+function dicom_button_Callback(hObject, ~, handles)
 % hObject    handle to dicom_button (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -353,50 +497,90 @@ function dicom_button_Callback(~, ~, handles)
 % Log event
 Event('DICOM export button selected');
 
-%% Export CT
 % Prompt user to select save location
-Event('UI window opened to select CT file location');
-[name, path] = uiputfile('*.dcm', 'Save CT Image As');
+Event('UI window opened to select save folder location');
+path = uigetdir(handles.userpath, 'Select Directory to Save DICOM Data');
 
-% If the user provided a file location
-if ~isequal(name, 0) && isfield(handles, 'image')
-     
+% If the user chose a directory
+if ~isequal(path, 0)
     
-% Otherwise no file was selected
+    % Start waitbar
+    progress = waitbar(0, 'Exporting Plan to DICOM');
+    
+    % Update default path and log folder
+    handles.userpath = path;
+    Event(['DICOM files will be saved to ', path]);
+    
+    % Generate patient folder name from patient name
+    patientDir = regexprep(handles.plan.patientName, '[ \W]', '_');
+    
+    % Generate plan folder name from plan label
+    planDir = regexprep(handles.plan.planLabel, '[ \W]', '_');
+    
+    % Make patient/plan folders unless they already exist
+    if ~isdir(fullfile(path, patientDir, planDir))
+        mkdir(fullfile(path, patientDir, planDir));
+    end 
+    
+    %% Export CT
+    % If the user provided a file location
+    if isfield(handles, 'image')
+
+        % Update progress bar
+        waitbar(0.1, progress, 'Exporting DICOM CT');
+        
+    % Otherwise no file was selected
+    else
+        Event('DICOM CT not saved as CT data not is present', 'WARN');
+    end
+
+    %% Export RTSS
+    % If the user provided a file location
+    if isfield(handles, 'image') && isfield(handles.image, 'structures')
+
+        % Update progress bar
+        waitbar(0.4, progress, 'Exporting DICOM RT Structure Set');
+
+    % Otherwise no file was selected
+    else
+        Event('DICOM RTSS not saved as RTSS data is not present', 'WARN');
+    end
+
+    %% Export Dose
+    % If the user provided a file location
+    if isfield(handles, 'dose')
+
+        % Update progress bar
+        waitbar(0.7, progress, 'Exporting DICOM Dose');
+        
+        % Create series description
+        handles.plan.seriesDescription = ['TomoTherapy Plan ', ...
+            handles.plan.planLabel];
+        
+        % Write dose to file
+        WriteDICOMDose(handles.dose, fullfile(path, patientDir, planDir, ...
+            'RTDose.dcm'), handles.plan);
+        
+    % Otherwise no file was selected
+    else
+        Event('DICOM Dose not saved as dose data is not present');
+    end
+
 else
-    Event('No file was selected, or supporting CT data is not present');
+    Event('No directory was selected for export');
 end
 
-%% Export RTSS
-% Prompt user to select save location
-Event('UI window opened to select RTSS file location');
-[name, path] = uiputfile('*.dcm', 'Save RT Structure Set As');
+% Update waitbar
+waitbar(1.0, progress, 'DICOM export completed');
 
-% If the user provided a file location
-if ~isequal(name, 0) && isfield(handles, 'structures')
-     
-    
-% Otherwise no file was selected
-else
-    Event('No file was selected, or supporting RTSS data is not present');
-end
-
-%% Export Dose
-% Prompt user to select save location
-Event('UI window opened to select Dose file location');
-[name, path] = uiputfile('*.dcm', 'Save Dose Image As');
-
-% If the user provided a file location
-if ~isequal(name, 0) && isfield(handles, 'dose')
-     
-    
-% Otherwise no file was selected
-else
-    Event('No file was selected, or supporting dose data is not present');
-end
+% Close waitbar
+close(progress);
 
 % Clear temporary variables
-clear name path;
+clear progress path;
+
+% Update handles structure
+guidata(hObject, handles);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function figure1_SizeChangedFcn(hObject, ~, handles)
@@ -414,7 +598,7 @@ pos = get(handles.plan_info, 'Position') .* ...
 
 % Update column widths to scale to new table size
 set(handles.plan_info, 'ColumnWidth', ...
-    {floor(0.5*pos(3)) - 4 floor(0.5*pos(3))});
+    {floor(0.4*pos(3)) - 5 floor(0.6*pos(3))});
 
 % Clear temporary variables
 clear pos;
