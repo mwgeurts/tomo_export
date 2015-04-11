@@ -522,12 +522,20 @@ if ~isequal(path, 0)
         mkdir(fullfile(path, patientDir, planDir));
     end 
     
+    % Create series description
+    handles.plan.seriesDescription = ['TomoTherapy Plan ', ...
+        handles.plan.planLabel];
+    
     %% Export CT
     % If the user provided a file location
     if isfield(handles, 'image')
 
         % Update progress bar
         waitbar(0.1, progress, 'Exporting DICOM CT');
+        
+        % Write images to file
+        WriteDICOMImage(handles.image, fullfile(path, patientDir, planDir, ...
+            'CT'), handles.plan);
         
     % Otherwise no file was selected
     else
@@ -552,10 +560,6 @@ if ~isequal(path, 0)
 
         % Update progress bar
         waitbar(0.7, progress, 'Exporting DICOM Dose');
-        
-        % Create series description
-        handles.plan.seriesDescription = ['TomoTherapy Plan ', ...
-            handles.plan.planLabel];
         
         % Write dose to file
         WriteDICOMDose(handles.dose, fullfile(path, patientDir, planDir, ...
