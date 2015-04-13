@@ -1,5 +1,7 @@
 function varargout = TomoExport(varargin)
-% The TomoTherapy Patient Archive Edit Tool...
+% The TomoTherapy Patient Archive Export Tool reads in a patient archive 
+% and allows the user to view and export approved treatments plans to DICOM
+% CT, RTstruct, and RT Dose files for archival in PACS systems.
 %
 % TomoTherapy is a registered trademark of Accuray Incorporated. See the
 % README for more information, including installation information and
@@ -57,7 +59,7 @@ warning('off','all');
 handles.output = hObject;
 
 % Set version handle
-handles.version = '0.1';
+handles.version = '0.9';
 
 % Determine path of current application
 [path, ~, ~] = fileparts(mfilename('fullpath'));
@@ -523,8 +525,12 @@ if ~isequal(path, 0)
     end 
     
     % Create series description
-    handles.plan.seriesDescription = ['TomoTherapy Plan ', ...
+    handles.image.seriesDescription = ['TomoTherapy Plan ', ...
         handles.plan.planLabel];
+    
+    % Generate series and study UIDs
+    handles.image.seriesUID = dicomuid;
+    handles.image.studyUID = dicomuid;
     
     %% Export CT
     % If the user provided a file location
@@ -533,9 +539,14 @@ if ~isequal(path, 0)
         % Update progress bar
         waitbar(0.1, progress, 'Exporting DICOM CT');
         
+        % Make CT folder unless they already exist
+        if ~isdir(fullfile(path, patientDir, planDir, 'CT'))
+            mkdir(fullfile(path, patientDir, planDir, 'CT'));
+        end 
+        
         % Write images to file
         WriteDICOMImage(handles.image, fullfile(path, patientDir, planDir, ...
-            'CT'), handles.plan);
+            'CT', 'CT'), handles.image);
         
     % Otherwise no file was selected
     else
@@ -549,6 +560,16 @@ if ~isequal(path, 0)
         % Update progress bar
         waitbar(0.4, progress, 'Exporting DICOM RT Structure Set');
 
+        % Make RTStruct folder unless they already exist
+        if ~isdir(fullfile(path, patientDir, planDir, 'RTStruct'))
+            mkdir(fullfile(path, patientDir, planDir, 'RTStruct'));
+        end 
+        
+        % Write dose to file
+        WriteDICOMStructures(handles.image.structures, ...
+            fullfile(path, patientDir, planDir, 'RTStruct', 'RTStruct.dcm'), ...
+            handles.image);
+        
     % Otherwise no file was selected
     else
         Event('DICOM RTSS not saved as RTSS data is not present', 'WARN');
@@ -561,24 +582,28 @@ if ~isequal(path, 0)
         % Update progress bar
         waitbar(0.7, progress, 'Exporting DICOM Dose');
         
+        % Make Dose folder unless they already exist
+        if ~isdir(fullfile(path, patientDir, planDir, 'Dose'))
+            mkdir(fullfile(path, patientDir, planDir, 'Dose'));
+        end 
+        
         % Write dose to file
         WriteDICOMDose(handles.dose, fullfile(path, patientDir, planDir, ...
-            'RTDose.dcm'), handles.plan);
+            'Dose', 'RTDose.dcm'), handles.image);
         
     % Otherwise no file was selected
     else
         Event('DICOM Dose not saved as dose data is not present');
     end
+ 
+    % Update waitbar
+    waitbar(1.0, progress, 'DICOM export completed');
 
+    % Close waitbar
+    close(progress);
 else
     Event('No directory was selected for export');
 end
-
-% Update waitbar
-waitbar(1.0, progress, 'DICOM export completed');
-
-% Close waitbar
-close(progress);
 
 % Clear temporary variables
 clear progress path;
