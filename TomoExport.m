@@ -1,11 +1,10 @@
 function varargout = TomoExport(varargin)
-% The TomoTherapy Patient Archive Export Tool reads in a patient archive 
-% and allows the user to view and export approved treatments plans to DICOM
-% CT, RTstruct, and RT Dose files for archival in PACS systems.
+% The TomoTherapy Patient Archive DICOM Export Tool reads in a patient 
+% archive and allows the user to view and export approved treatments plans 
+% to DICOM CT, RTstruct, and RT Dose files for archival in PACS systems.
 %
 % TomoTherapy is a registered trademark of Accuray Incorporated. See the
-% README for more information, including installation information and
-% algorithm details.
+% README for more information, including installation instructions.
 %
 % Author: Mark Geurts, mark.w.geurts@gmail.com
 % Copyright (C) 2015 University of Wisconsin Board of Regents
@@ -59,7 +58,7 @@ warning('off','all');
 handles.output = hObject;
 
 % Set version handle
-handles.version = '0.9';
+handles.version = '1.0';
 
 % Determine path of current application
 [path, ~, ~] = fileparts(mfilename('fullpath'));
@@ -323,7 +322,8 @@ waitbar(0.8, progress, 'Updating Display');
 data = {    
     'Patient Name'      handles.plan.patientName
     'Patient ID'        handles.plan.patientID
-    'Birth Date'        handles.plan.patientBirthDate
+    'Birth Date'        datestr(datenum(handles.plan.patientBirthDate, ...
+                            'yyyymmdd'), 'mmmm dd, yyyy')
     'Gender'            handles.plan.patientSex
     'Plan Name'         handles.plan.planLabel
     'Plan Type'         handles.plan.planType
