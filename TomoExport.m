@@ -142,7 +142,7 @@ set(handles.plan_info, 'Enable', 'off');
 set(handles.plan_info, 'Data', cell(14, 2));
 
 %% Initialize global variables
-% Prefix for study description in written DICOM files. This prefix will be
+% Prefix for series description in written DICOM files. This prefix will be
 % followed by the plan name.
 handles.descriptionPrefix = 'TomoTherapy Plan: ';
 
@@ -321,6 +321,14 @@ end
 
 % Update progress bar
 waitbar(0.8, progress, 'Updating Display');
+
+% Fill in missing data
+if ~isfield(handles.plan, 'patientBirthDate')
+    handles.plan.patientBirthDate = '';
+end
+if ~isfield(handles.plan, 'patientSex')
+    handles.plan.patientSex = '';
+end
 
 % Update plan information table
 data = {    
