@@ -224,8 +224,8 @@ if ~isequal(handles.name, 0)
     % Find plan version
     handles.version = FindVersion(handles.path, handles.name);
     
-    % If the version is 4.X or later
-    if str2double(handles.version(1)) >= 4
+    % If the version is 3.X or later
+    if str2double(handles.version(1)) >= 3
     
         % Retrieve all approved plan plan UIDs
         handles.planUIDs = FindPlans(handles.path, handles.name);
@@ -253,12 +253,6 @@ if ~isequal(handles.name, 0)
             Event('No approved plans were found in the provided archive', ...
                 'ERROR');
         end
-        
-    % If the version is 3.X
-    elseif str2double(handles.version(1)) == 3
-        
-        % Warn user that this application does not currently support v3
-        Event('Version 3 archives are not currently supported', 'ERROR');
         
     % If the version is 2.X
     elseif str2double(handles.version(1)) == 2
@@ -288,8 +282,8 @@ Event(sprintf('Plan UID %s selected to load', ...
 % Start waitbar
 progress = waitbar(0, 'Loading CT Image');
 
-% If the version is 4.X or later
-if str2double(handles.version(1)) >= 4
+% If the version is 3.X or later
+if str2double(handles.version(1)) >= 3
 
     % Retrieve CT 
     handles.image = LoadImage(handles.path, handles.name, ...
@@ -315,11 +309,6 @@ if str2double(handles.version(1)) >= 4
     % Retrieve Dose
     handles.dose = LoadPlanDose(handles.path, handles.name, ...
         handles.planUIDs{get(hObject, 'Value')});
-    
-% If the version is 3.X
-elseif str2double(handles.version(1)) == 3
-
-
 
 % If the version is 2.X
 elseif str2double(handles.version(1)) == 2
@@ -338,6 +327,7 @@ data = {
     'Gender'            handles.plan.patientSex
     'Plan Name'         handles.plan.planLabel
     'Plan Type'         handles.plan.planType
+    'Patient Position'  handles.image.position
 };
 set(handles.plan_info, 'Data', data);
 set(handles.plan_info, 'Enable', 'on');
@@ -525,7 +515,7 @@ if ~isequal(path, 0)
     end 
     
     % Create series description
-    handles.image.seriesDescription = ['TomoTherapy Plan ', ...
+    handles.image.seriesDescription = ['TomoTherapy Plan: ', ...
         handles.plan.planLabel];
     
     % Generate series and study UIDs
