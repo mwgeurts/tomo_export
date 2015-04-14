@@ -58,7 +58,7 @@ warning('off','all');
 handles.output = hObject;
 
 % Set version handle
-handles.version = '1.0';
+handles.version = '1.0.1';
 
 % Determine path of current application
 [path, ~, ~] = fileparts(mfilename('fullpath'));
@@ -142,6 +142,10 @@ set(handles.plan_info, 'Enable', 'off');
 set(handles.plan_info, 'Data', cell(14, 2));
 
 %% Initialize global variables
+% Prefix for study description in written DICOM files. This prefix will be
+% followed by the plan name.
+handles.descriptionPrefix = 'TomoTherapy Plan: ';
+
 % Default folder path when selecting input files
 handles.userpath = userpath;
 Event(['Default file path set to ', handles.userpath]);
@@ -515,7 +519,7 @@ if ~isequal(path, 0)
     end 
     
     % Create series description
-    handles.image.seriesDescription = ['TomoTherapy Plan: ', ...
+    handles.image.seriesDescription = [handles.descriptionPrefix, ...
         handles.plan.planLabel];
     
     % Generate series and study UIDs
