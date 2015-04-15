@@ -252,7 +252,7 @@ if ~isequal(handles.name, 0)
         % Otherwise 
         else
             
-            % Warn user that this application does not currently support v3
+            % Warn user no plans were found
             Event('No approved plans were found in the provided archive', ...
                 'ERROR');
         end
@@ -260,8 +260,39 @@ if ~isequal(handles.name, 0)
     % If the version is 2.X
     elseif str2double(handles.version(1)) == 2
         
-        % Warn user that this application does not currently support v2
-        Event('Version 2 archives are not currently supported', 'ERROR');
+        % Retrieve all approved plan plan UIDs
+        handles.planUIDs = FindLegacyPlans(handles.path, handles.name);
+        
+        % Update plan dropdown menu
+        set(handles.plan_select, 'String', handles.planUIDs);
+        
+        % If at least 1 plan was found
+        if length(handles.planUIDs) >= 1
+            
+            % Update selected plan
+            set(handles.plan_select, 'Value', 1);
+            
+            % Enable dropdown menu
+            set(handles.plan_select, 'enable', 'on');
+            
+            % Execute plan_select
+            handles = ...
+                plan_select_Callback(handles.plan_select, '', handles);
+        
+        % Otherwise 
+        else
+            
+            % Warn user no plans were found
+            Event('No approved plans were found in the provided archive', ...
+                'ERROR');
+        end
+        
+    % Otherwise the file version is not supported   
+    else
+        
+        % Log error
+        Event(['Archive version ', handles.version, 'is not supported'], ...
+                'ERROR');
     end
     
 % Otherwise the user did not select a file
@@ -316,7 +347,30 @@ if str2double(handles.version(1)) >= 3
 % If the version is 2.X
 elseif str2double(handles.version(1)) == 2
 
+    % Retrieve CT 
+    handles.image = LoadLegacyImage(handles.path, handles.name, ...
+        handles.planUIDs{get(hObject, 'Value')});
+    
+    % Update progress bar
+    waitbar(0.2, progress, 'Loading Delivery Plan');
 
+    % Retrieve Plan 
+    handles.plan = LoadLegacyPlan(handles.path, handles.name, ...
+        handles.planUIDs{get(hObject, 'Value')});
+    
+    % Update progress bar
+    waitbar(0.4, progress, 'Loading Structure Sets');
+    
+    % Retrieve Structures
+    handles.image.structures = LoadLegacyStructures(handles.path, ...
+        handles.name, handles.image);
+    
+    % Update progress bar
+    waitbar(0.6, progress, 'Loading Dose Image');
+    
+    % Retrieve Dose
+    handles.dose = LoadPlanDose(handles.path, handles.name, ...
+        handles.planUIDs{get(hObject, 'Value')});
 end
 
 % Update progress bar
