@@ -1,5 +1,5 @@
 <deployment-project plugin="plugin.apptool" plugin-version="1.0">
-  <configuration build-checksum="4156808090" file="/Users/mwgeurts/Box Sync/TomoTherapy/Archive DICOM Export Project/tomo_export/TomoTherapy Patient Archive DICOM Export.prj" location="/Users/mwgeurts/Box Sync/TomoTherapy/Archive DICOM Export Project/tomo_export" name="TomoTherapy Patient Archive DICOM Export" target="target.mlapps" target-name="Package App">
+  <configuration build-checksum="3762302333" file="/Users/mwgeurts/Box Sync/TomoTherapy/Archive DICOM Export Project/tomo_export/TomoTherapy Patient Archive DICOM Export.prj" location="/Users/mwgeurts/Box Sync/TomoTherapy/Archive DICOM Export Project/tomo_export" name="TomoTherapy Patient Archive DICOM Export" target="target.mlapps" target-name="Package App">
     <param.appname>TomoTherapy Patient Archive DICOM Export</param.appname>
     <param.authnamewatermark>Mark Geurts</param.authnamewatermark>
     <param.email>mark.w.geurts@gmail.com</param.email>
@@ -9,7 +9,7 @@
     <param.summary>DICOM export TomoTherapy plans from patient archives</param.summary>
     <param.description>The TomoTherapy® Patient Archive DICOM Export Tool reads in a patient archive and allows the user to view and export approved treatments plans to DICOM CT, RTstruct, and RT Dose files for archival in PACS systems.</param.description>
     <param.screenshot>${PROJECT_ROOT}/gui.png</param.screenshot>
-    <param.version>1.0.1</param.version>
+    <param.version>1.0.2</param.version>
     <param.products.name>
       <item>MATLAB</item>
       <item>Image Processing Toolbox</item>
