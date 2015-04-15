@@ -58,7 +58,7 @@ warning('off','all');
 handles.output = hObject;
 
 % Set version handle
-handles.version = '1.0.2';
+handles.version = '1.0.3';
 
 % Determine path of current application
 [path, ~, ~] = fileparts(mfilename('fullpath'));
@@ -372,7 +372,29 @@ elseif str2double(handles.version(1)) == 2
     % Retrieve Dose
     handles.dose = LoadPlanDose(handles.path, handles.name, ...
         handles.planUIDs{get(hObject, 'Value')});
+    
 end
+
+% Generate unique image instance UIDs
+Event('Generating unique image instance UIDs');
+
+% Initialize cell array
+handles.image.instanceUIDs = cell(size(handles.image.data, 3), 1);
+
+% Loop through CT Images
+for i = 1:size(handles.image.data, 3)
+
+    % Save a unique ID
+    handles.image.instanceUIDs{i} = dicomuid;
+end
+
+% Generate unique structure set instance UID
+Event('Generating unique structure UID');
+handles.image.structureSetUID = dicomuid;
+
+% Generate unique FOR instance UID
+Event('Generating unique FOR UID');
+handles.image.frameRefUID = dicomuid;
 
 % Update progress bar
 waitbar(0.8, progress, 'Updating Display');
@@ -418,7 +440,7 @@ waitbar(1.0, progress, 'Plan load completed');
 close(progress);
 
 % Clear temporary variables
-clear progress;
+clear progress i;
 
 % Enable DICOM export button
 set(handles.dicom_button, 'Enable', 'on');
