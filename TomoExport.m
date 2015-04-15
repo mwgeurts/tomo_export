@@ -58,7 +58,7 @@ warning('off','all');
 handles.output = hObject;
 
 % Set version handle
-handles.version = '1.0.1';
+handles.version = '1.0.2';
 
 % Determine path of current application
 [path, ~, ~] = fileparts(mfilename('fullpath'));
@@ -390,11 +390,13 @@ data = {
     'Patient Name'      handles.plan.patientName
     'Patient ID'        handles.plan.patientID
     'Birth Date'        datestr(datenum(handles.plan.patientBirthDate, ...
-                            'yyyymmdd'), 'mmmm dd, yyyy')
+                            'yyyymmdd'))
     'Gender'            handles.plan.patientSex
     'Plan Name'         handles.plan.planLabel
     'Plan Type'         handles.plan.planType
+    'Plan Date/Time'    datestr(handles.plan.timestamp)
     'Patient Position'  handles.image.position
+
 };
 set(handles.plan_info, 'Data', data);
 set(handles.plan_info, 'Enable', 'on');
