@@ -58,7 +58,7 @@ warning('off','all');
 handles.output = hObject;
 
 % Set version handle
-handles.version = '1.0.3';
+handles.version = '1.0.4';
 
 % Determine path of current application
 [path, ~, ~] = fileparts(mfilename('fullpath'));
@@ -225,11 +225,11 @@ if ~isequal(handles.name, 0)
     set(handles.archive_file, 'String', ...
         fullfile(handles.path, handles.name));
        
-    % Find plan version
-    handles.version = FindVersion(handles.path, handles.name);
+    % Find plan build and database version
+    [handles.build, handles.db] = FindVersion(handles.path, handles.name);
     
-    % If the version is 3.X or later
-    if str2double(handles.version(1)) >= 3
+    % If the database version is after 6 (when Tomo moved to characters)
+    if isletter(handles.db(1))
     
         % Retrieve all approved plan plan UIDs
         handles.planUIDs = FindPlans(handles.path, handles.name);
@@ -258,8 +258,8 @@ if ~isequal(handles.name, 0)
                 'ERROR');
         end
         
-    % If the version is 2.X
-    elseif str2double(handles.version(1)) == 2
+    % Otherwise, if the database version is 2 or later
+    elseif str2double(handles.db(1)) >= 2
         
         % Retrieve all approved plan plan UIDs
         handles.planUIDs = FindLegacyPlans(handles.path, handles.name);
@@ -292,8 +292,8 @@ if ~isequal(handles.name, 0)
     else
         
         % Log error
-        Event(['Archive version ', handles.version, ' is not supported'], ...
-                'ERROR');
+        Event(['Archive database version ', handles.db, ...
+            ' is not supported'], 'ERROR');
     end
     
 % Otherwise the user did not select a file
@@ -317,8 +317,8 @@ Event(sprintf('Plan UID %s selected to load', ...
 % Start waitbar
 progress = waitbar(0, 'Loading CT Image');
 
-% If the version is 3.X or later
-if str2double(handles.version(1)) >= 3
+% If the database version is after 6 (when Tomo moved to characters)
+if isletter(handles.db(1))
 
     % Retrieve CT 
     handles.image = LoadImage(handles.path, handles.name, ...
@@ -345,8 +345,8 @@ if str2double(handles.version(1)) >= 3
     handles.dose = LoadPlanDose(handles.path, handles.name, ...
         handles.planUIDs{get(hObject, 'Value')});
 
-% If the version is 2.X
-elseif str2double(handles.version(1)) == 2
+% Otherwise, if the database version is 2 or later
+elseif str2double(handles.db(1)) >= 2
 
     % Retrieve CT 
     handles.image = LoadLegacyImage(handles.path, handles.name, ...
@@ -418,7 +418,7 @@ data = {
     'Plan Type'         handles.plan.planType
     'Plan Date/Time'    datestr(handles.plan.timestamp)
     'Patient Position'  handles.image.position
-
+    'Software Build'    handles.build
 };
 set(handles.plan_info, 'Data', data);
 set(handles.plan_info, 'Enable', 'on');
