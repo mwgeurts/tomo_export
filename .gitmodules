@@ -4,3 +4,6 @@
 [submodule "tomo_extract"]
 	path = tomo_extract
 	url = https://github.com/mwgeurts/tomo_extract
+[submodule "unit_harness"]
+	path = unit_harness
+	url = https://github.com/mwgeurts/unit_harness

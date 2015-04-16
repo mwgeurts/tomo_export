@@ -58,7 +58,7 @@ warning('off','all');
 handles.output = hObject;
 
 % Set version handle
-handles.version = '1.0.4';
+handles.version = '1.0.5';
 
 % Determine path of current application
 [path, ~, ~] = fileparts(mfilename('fullpath'));
@@ -94,8 +94,10 @@ Event(string, 'INIT');
 % Add archive extraction tools submodule to search path
 addpath('./tomo_extract');
 
-% Check if MATLAB can find CalcDose
-if exist('FindPlans', 'file') ~= 2
+% Check if MATLAB can find CalcDose. This feature can be tested by
+% executing TomoExport('unitFindPlans')
+if exist('FindPlans', 'file') ~= 2 || (~isempty(varargin) && ...
+        strcmp(varargin{1}, 'unitFindPlans'))
     
     % If not, throw an error
     Event(['The Archive Extraction Tools submodule does not exist in the ', ...
@@ -108,8 +110,10 @@ end
 % Add DICOM tools submodule to search path
 addpath('./dicom_tools');
 
-% Check if MATLAB can find LoadDICOMImages
-if exist('WriteDICOMDose', 'file') ~= 2
+% Check if MATLAB can find WriteDICOMDose. This feature can be tested by
+% executing TomoExport('unitWriteDICOMDose')
+if exist('WriteDICOMDose', 'file') ~= 2 || (~isempty(varargin) && ...
+        strcmp(varargin{1}, 'unitWriteDICOMDose'))
     
     % If not, throw an error
     Event(['The DICOM Tools submodule does not exist in the ', ...
@@ -145,6 +149,8 @@ set(handles.plan_info, 'Data', cell(14, 2));
 % Prefix for series description in written DICOM files. This prefix will be
 % followed by the plan name.
 handles.descriptionPrefix = 'TomoTherapy Plan: ';
+Event(['DICOM series description prefix set to ', ...
+    handles.descriptionPrefix]);
 
 % Default folder path when selecting input files
 handles.userpath = userpath;
@@ -207,12 +213,23 @@ function archive_browse_Callback(hObject, ~, handles)
 % Log event
 Event('Archive browse button selected');
 
-% Request the user to select the Daily QA DICOM or XML
-Event('UI window opened to select file');
-[handles.name, handles.path] = uigetfile({'*_patient.xml', ...
-    'Patient Archive (*_patient.xml)'; '*.xml', ...
-    'Legacy Archive (*.xml)'}, 'Select the Archive Patient XML File', ...
-    handles.userpath);
+% If not executing in unit test
+if handles.unitflag == 0
+
+    % Request the user to select the Daily QA DICOM or XML
+    Event('UI window opened to select file');
+    [handles.name, handles.path] = uigetfile({'*_patient.xml', ...
+        'Patient Archive (*_patient.xml)'; '*.xml', ...
+        'Legacy Archive (*.xml)'}, 'Select the Archive Patient XML File', ...
+        handles.userpath);
+    
+else
+    
+    % Log unit test
+    Event('Retrieving stored name and path variables', 'UNIT');
+    handles.name = handles.unitname;
+    handles.path = handles.unitpath;
+end
     
 % If the user selected a file
 if ~isequal(handles.name, 0)
@@ -580,9 +597,19 @@ function dicom_button_Callback(hObject, ~, handles)
 % Log event
 Event('DICOM export button selected');
 
-% Prompt user to select save location
-Event('UI window opened to select save folder location');
-path = uigetdir(handles.userpath, 'Select Directory to Save DICOM Data');
+% If not executing in unit test
+if handles.unitflag == 0
+
+    % Prompt user to select save location
+    Event('UI window opened to select save folder location');
+    path = uigetdir(handles.userpath, ...
+        'Select Directory to Save DICOM Data');
+else
+    
+    % Log unit test
+    Event('Retrieving stored name and path variables', 'UNIT');
+    path = handles.unitexportpath;
+end
 
 % If the user chose a directory
 if ~isequal(path, 0)
