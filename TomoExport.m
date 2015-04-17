@@ -58,7 +58,7 @@ warning('off','all');
 handles.output = hObject;
 
 % Set version handle
-handles.version = '1.0.6';
+handles.version = '1.1.0';
 
 % Determine path of current application
 [path, ~, ~] = fileparts(mfilename('fullpath'));
@@ -143,14 +143,13 @@ set(handles.alpha, 'visible', 'off');
 % Disable info table and export button (Patient data must be loaded first)
 set(handles.dicom_button, 'Enable', 'off');
 set(handles.plan_info, 'Enable', 'off');
-set(handles.plan_info, 'Data', cell(14, 2));
+set(handles.plan_info, 'Data', cell(13, 2));
 
 %% Initialize global variables
 % Prefix for series description in written DICOM files. This prefix will be
 % followed by the plan name.
-handles.descriptionPrefix = 'TomoTherapy Plan: ';
-Event(['DICOM series description prefix set to ', ...
-    handles.descriptionPrefix]);
+handles.description = 'TomoTherapy Plan';
+Event(['DICOM series descriptionset to ', handles.description]);
 
 % Default folder path when selecting input files
 handles.userpath = userpath;
@@ -392,27 +391,6 @@ elseif str2double(handles.db(1)) >= 2
     
 end
 
-% Generate unique image instance UIDs
-Event('Generating unique image instance UIDs');
-
-% Initialize cell array
-handles.image.instanceUIDs = cell(size(handles.image.data, 3), 1);
-
-% Loop through CT Images
-for i = 1:size(handles.image.data, 3)
-
-    % Save a unique ID
-    handles.image.instanceUIDs{i} = dicomuid;
-end
-
-% Generate unique structure set instance UID
-Event('Generating unique structure UID');
-handles.image.structureSetUID = dicomuid;
-
-% Generate unique FOR instance UID
-Event('Generating unique FOR UID');
-handles.image.frameRefUID = dicomuid;
-
 % Update progress bar
 waitbar(0.8, progress, 'Updating Display');
 
@@ -423,6 +401,26 @@ end
 if ~isfield(handles.plan, 'patientSex')
     handles.plan.patientSex = '';
 end
+if ~isfield(handles.plan, 'machine')
+    handles.plan.machine = '';
+end
+if ~isfield(handles.plan, 'approver')
+    handles.plan.approver = '';
+end
+if isfield(handles.plan, 'frontField') && isfield(handles.plan, 'backField')
+    width = sprintf('%0.3f cm', ...
+        sum(abs([handles.plan.frontField, handles.plan.backField])));
+else
+    width = '';
+end
+if isfield(handles.plan, 'rxDose') && isfield(handles.plan, 'rxVolume') && ...
+        isfield(handles.plan, 'fractions')
+    prescription = sprintf('%0.1f%% to %0.1f Gy in %i fractions', ...
+        handles.plan.rxVolume, handles.plan.rxDose, ...
+        handles.plan.fractions);
+else
+    prescription = '';
+end
 
 % Update plan information table
 data = {    
@@ -431,10 +429,14 @@ data = {
     'Birth Date'        datestr(datenum(handles.plan.patientBirthDate, ...
                             'yyyymmdd'))
     'Gender'            handles.plan.patientSex
+    'Machine'           handles.plan.machine
     'Plan Name'         handles.plan.planLabel
     'Plan Type'         handles.plan.planType
     'Plan Date/Time'    datestr(handles.plan.timestamp)
+    'Approver'          handles.plan.approver
     'Patient Position'  handles.image.position
+    'Prescription'      prescription
+    'Field Size'        width           
     'Software Build'    handles.build
 };
 set(handles.plan_info, 'Data', data);
@@ -632,13 +634,43 @@ if ~isequal(path, 0)
         mkdir(fullfile(path, patientDir, planDir));
     end 
     
-    % Create series description
-    handles.image.seriesDescription = [handles.descriptionPrefix, ...
-        handles.plan.planLabel];
+    % Store series and study descriptions
+    handles.plan.seriesDescription = handles.image.seriesDescription;
+    handles.plan.studyDescription = handles.image.studyDescription;
+    
+    % Store patient position from image
+    handles.plan.position = handles.image.position;
+    
+     % Generate unique series/study UIDs
+    Event('Generating unique series/study UIDs');
     
     % Generate series and study UIDs
-    handles.image.seriesUID = dicomuid;
-    handles.image.studyUID = dicomuid;
+    handles.plan.seriesUID = dicomuid;
+    handles.plan.studyUID = dicomuid;
+
+    % Generate unique image instance UIDs
+    Event('Generating unique image instance UIDs');
+
+    % Initialize cell array
+    handles.plan.instanceUIDs = cell(size(handles.image.data, 3), 1);
+
+    % Loop through CT Images
+    for i = 1:size(handles.image.data, 3)
+
+        % Save a unique ID
+        handles.plan.instanceUIDs{i} = dicomuid;
+    end
+
+    % Generate unique structure set instance UID
+    Event('Generating unique structure UID');
+    handles.plan.structureSetUID = dicomuid;
+
+    % Generate unique FOR instance UID
+    Event('Generating unique FOR UID');
+    handles.plan.frameRefUID = dicomuid;
+
+    % Generate unique dose instance UID
+    handles.plan.doseSeriesUID = dicomuid;
     
     %% Export CT
     % If the user provided a file location
@@ -654,7 +686,7 @@ if ~isequal(path, 0)
         
         % Write images to file
         WriteDICOMImage(handles.image, fullfile(path, patientDir, planDir, ...
-            'CT', 'CT'), handles.image);
+            'CT', 'CT'), handles.plan);
         
     % Otherwise no file was selected
     else
@@ -676,7 +708,7 @@ if ~isequal(path, 0)
         % Write dose to file
         WriteDICOMStructures(handles.image.structures, ...
             fullfile(path, patientDir, planDir, 'RTStruct', 'RTStruct.dcm'), ...
-            handles.image);
+            handles.plan);
         
     % Otherwise no file was selected
     else
@@ -697,7 +729,7 @@ if ~isequal(path, 0)
         
         % Write dose to file
         WriteDICOMDose(handles.dose, fullfile(path, patientDir, planDir, ...
-            'Dose', 'RTDose.dcm'), handles.image);
+            'Dose', 'RTDose.dcm'), handles.plan);
         
     % Otherwise no file was selected
     else
@@ -735,7 +767,7 @@ pos = get(handles.plan_info, 'Position') .* ...
 
 % Update column widths to scale to new table size
 set(handles.plan_info, 'ColumnWidth', ...
-    {floor(0.4*pos(3)) - 5 floor(0.6*pos(3))});
+    {floor(0.4*pos(3)) - 4 floor(0.6*pos(3))});
 
 % Clear temporary variables
 clear pos;
