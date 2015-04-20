@@ -149,7 +149,7 @@ set(handles.plan_info, 'Data', cell(13, 2));
 % Prefix for series description in written DICOM files. This prefix will be
 % followed by the plan name.
 handles.description = 'TomoTherapy Plan';
-Event(['DICOM series descriptionset to ', handles.description]);
+Event(['DICOM series description set to ', handles.description]);
 
 % Default folder path when selecting input files
 handles.userpath = userpath;
@@ -617,7 +617,7 @@ end
 if ~isequal(path, 0)
     
     % Start waitbar
-    progress = waitbar(0, 'Exporting Plan to DICOM');
+    progress = waitbar(0, 'Initializing DICOM Export');
     
     % Update default path and log folder
     handles.userpath = path;
@@ -635,8 +635,12 @@ if ~isequal(path, 0)
     end 
     
     % Store series and study descriptions
-    handles.plan.seriesDescription = handles.image.seriesDescription;
-    handles.plan.studyDescription = handles.image.studyDescription;
+    handles.plan.seriesDescription = handles.description;
+    Event(['DICOM series description set to ', ...
+        handles.plan.seriesDescription]);
+    handles.plan.studyDescription = handles.plan.planLabel;
+    Event(['DICOM series description set to ', ...
+        handles.plan.studyDescription]);
     
     % Store patient position from image
     handles.plan.position = handles.image.position;
@@ -644,33 +648,13 @@ if ~isequal(path, 0)
      % Generate unique series/study UIDs
     Event('Generating unique series/study UIDs');
     
-    % Generate series and study UIDs
-    handles.plan.seriesUID = dicomuid;
+    % Generate study and series UIDs
     handles.plan.studyUID = dicomuid;
-
-    % Generate unique image instance UIDs
-    Event('Generating unique image instance UIDs');
-
-    % Initialize cell array
-    handles.plan.instanceUIDs = cell(size(handles.image.data, 3), 1);
-
-    % Loop through CT Images
-    for i = 1:size(handles.image.data, 3)
-
-        % Save a unique ID
-        handles.plan.instanceUIDs{i} = dicomuid;
-    end
-
-    % Generate unique structure set instance UID
-    Event('Generating unique structure UID');
-    handles.plan.structureSetUID = dicomuid;
+    handles.plan.seriesUID = dicomuid;
 
     % Generate unique FOR instance UID
     Event('Generating unique FOR UID');
     handles.plan.frameRefUID = dicomuid;
-
-    % Generate unique dose instance UID
-    handles.plan.doseSeriesUID = dicomuid;
     
     %% Export CT
     % If the user provided a file location
@@ -679,14 +663,14 @@ if ~isequal(path, 0)
         % Update progress bar
         waitbar(0.1, progress, 'Exporting DICOM CT');
         
-        % Make CT folder unless they already exist
+        % Make CT folder unless it already exists
         if ~isdir(fullfile(path, patientDir, planDir, 'CT'))
             mkdir(fullfile(path, patientDir, planDir, 'CT'));
         end 
         
-        % Write images to file
-        WriteDICOMImage(handles.image, fullfile(path, patientDir, planDir, ...
-            'CT', 'CT'), handles.plan);
+        % Write images to file, storing image UIDs
+        handles.plan.instanceUIDs = WriteDICOMImage(handles.image, ...
+            fullfile(path, patientDir, planDir, 'CT', 'CT'), handles.plan);
         
     % Otherwise no file was selected
     else
@@ -700,19 +684,41 @@ if ~isequal(path, 0)
         % Update progress bar
         waitbar(0.4, progress, 'Exporting DICOM RT Structure Set');
 
-        % Make RTStruct folder unless they already exist
+        % Make structure set folder unless it already exists
         if ~isdir(fullfile(path, patientDir, planDir, 'RTStruct'))
             mkdir(fullfile(path, patientDir, planDir, 'RTStruct'));
         end 
         
-        % Write dose to file
-        WriteDICOMStructures(handles.image.structures, ...
-            fullfile(path, patientDir, planDir, 'RTStruct', 'RTStruct.dcm'), ...
-            handles.plan);
+        % Write structure set to file, storing UID
+        handles.plan.structureSetUID = WriteDICOMStructures(...
+            handles.image.structures, fullfile(path, patientDir, planDir, ...
+            'RTStruct', 'RTStruct.dcm'), handles.plan);
         
     % Otherwise no file was selected
     else
         Event('DICOM RTSS not saved as RTSS data is not present', 'WARN');
+    end
+    
+    %% Export Plan
+    % If the user provided a file location
+    if isfield(handles, 'plan')
+
+        % Update progress bar
+        waitbar(0.9, progress, 'Exporting DICOM RT Plan');
+        
+        % Make plan folder unless it already exists
+        if ~isdir(fullfile(path, patientDir, planDir, 'RTPlan'))
+            mkdir(fullfile(path, patientDir, planDir, 'RTPlan'));
+        end 
+        
+        % Write plan to file, storing UID
+        handles.plan.planUID = WriteDICOMPlan(handles.plan, ...
+            fullfile(path, patientDir, planDir, 'RTPlan', 'RTPlan.dcm'));
+        
+    % Otherwise no file was selected
+    else
+        Event('DICOM RT Plan not saved as plan data is not present', ...
+            'WARN');
     end
 
     %% Export Dose
@@ -722,18 +728,18 @@ if ~isequal(path, 0)
         % Update progress bar
         waitbar(0.7, progress, 'Exporting DICOM Dose');
         
-        % Make Dose folder unless they already exist
+        % Make dose folder unless it already exists
         if ~isdir(fullfile(path, patientDir, planDir, 'Dose'))
             mkdir(fullfile(path, patientDir, planDir, 'Dose'));
         end 
         
-        % Write dose to file
-        WriteDICOMDose(handles.dose, fullfile(path, patientDir, planDir, ...
-            'Dose', 'RTDose.dcm'), handles.plan);
+        % Write dose to file, storing UID
+        handles.plan.doseUID = WriteDICOMDose(handles.dose, fullfile(path, ...
+            patientDir, planDir, 'Dose', 'RTDose.dcm'), handles.plan);
         
     % Otherwise no file was selected
     else
-        Event('DICOM Dose not saved as dose data is not present');
+        Event('DICOM Dose not saved as dose data is not present', 'WARN');
     end
  
     % Update waitbar
