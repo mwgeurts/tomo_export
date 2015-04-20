@@ -89,6 +89,7 @@ if nargin == 0
     % Declare prior version directories
     varargout{3} = {
         '../tomo_export-1.0'
+        '../tomo_export-1.0.5'
     };
 
     % Declare location of test data. Column 1 is the name of the 
