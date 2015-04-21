@@ -712,7 +712,7 @@ if ~isequal(path, 0)
         end 
         
         % Write plan to file, storing UID
-        handles.plan.planUID = WriteDICOMPlan(handles.plan, ...
+        handles.plan.planUID = WriteDICOMTomoPlan(handles.plan, ...
             fullfile(path, patientDir, planDir, 'RTPlan', 'RTPlan.dcm'));
         
     % Otherwise no file was selected

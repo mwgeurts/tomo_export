@@ -1,5 +1,5 @@
 <deployment-project plugin="plugin.apptool" plugin-version="1.0">
-  <configuration build-checksum="2589255249" file="/Users/mwgeurts/Box Sync/TomoTherapy/Archive DICOM Export Project/tomo_export/TomoTherapy Patient Archive DICOM Export.prj" location="/Users/mwgeurts/Box Sync/TomoTherapy/Archive DICOM Export Project/tomo_export" name="TomoTherapy Patient Archive DICOM Export" target="target.mlapps" target-name="Package App">
+  <configuration build-checksum="1406246786" file="/Users/mwgeurts/Box Sync/TomoTherapy/Archive DICOM Export Project/tomo_export/TomoTherapy Patient Archive DICOM Export.prj" location="/Users/mwgeurts/Box Sync/TomoTherapy/Archive DICOM Export Project/tomo_export" name="TomoTherapy Patient Archive DICOM Export" target="target.mlapps" target-name="Package App">
     <param.appname>TomoTherapy Patient Archive DICOM Export</param.appname>
     <param.authnamewatermark>Mark Geurts</param.authnamewatermark>
     <param.email>mark.w.geurts@gmail.com</param.email>
@@ -49,6 +49,7 @@
       <file>${PROJECT_ROOT}/dicom_tools/WriteDICOMDose.m</file>
       <file>${PROJECT_ROOT}/dicom_tools/WriteDICOMImage.m</file>
       <file>${PROJECT_ROOT}/dicom_tools/WriteDICOMStructures.m</file>
+      <file>${PROJECT_ROOT}/dicom_tools/WriteDICOMTomoPlan.m</file>
       <file>${PROJECT_ROOT}/tomo_extract/FindIVDT.m</file>
       <file>${PROJECT_ROOT}/tomo_extract/FindLegacyPlans.m</file>
       <file>${PROJECT_ROOT}/tomo_extract/FindPlans.m</file>
