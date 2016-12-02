@@ -243,7 +243,7 @@ hold on;
 if isfield(image1,'structures')
     
     % Loop through each structure
-    for i = 1:size(image1.structures, 2)
+    for i = 1:length(image1.structures)
         
         % If the statistics display column for this structure is set to
         % true (checked)
