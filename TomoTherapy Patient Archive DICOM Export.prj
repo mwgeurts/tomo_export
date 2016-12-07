@@ -1,32 +1,29 @@
 <deployment-project plugin="plugin.apptool" plugin-version="1.0">
-  <configuration build-checksum="1406246786" file="/Users/mwgeurts/Box Sync/TomoTherapy/Archive DICOM Export Project/tomo_export/TomoTherapy Patient Archive DICOM Export.prj" location="/Users/mwgeurts/Box Sync/TomoTherapy/Archive DICOM Export Project/tomo_export" name="TomoTherapy Patient Archive DICOM Export" target="target.mlapps" target-name="Package App">
+  <configuration build-checksum="2925616386" file="/Users/mwgeurts/Documents/TomoTherapy/Archive DICOM Export Project/tomo_export/TomoTherapy Patient Archive DICOM Export.prj" location="/Users/mwgeurts/Documents/TomoTherapy/Archive DICOM Export Project/tomo_export" name="TomoTherapy Patient Archive DICOM Export" target="target.mlapps" target-name="Package App">
     <param.appname>TomoTherapy Patient Archive DICOM Export</param.appname>
     <param.authnamewatermark>Mark Geurts</param.authnamewatermark>
     <param.email>mark.w.geurts@gmail.com</param.email>
-    <param.company>University of Wisconsin</param.company>
+    <param.company>University of Wisconsin-Madison</param.company>
     <param.icon />
     <param.icons />
     <param.summary>DICOM export TomoTherapy plans from patient archives</param.summary>
     <param.description>The TomoTherapy® Patient Archive DICOM Export Tool reads in a patient archive and allows the user to view and export approved treatments plans to DICOM CT, RTstruct, and RT Dose files for archival in PACS systems.</param.description>
     <param.screenshot>${PROJECT_ROOT}/gui.png</param.screenshot>
-    <param.version>1.1.0</param.version>
+    <param.version>1.2.0</param.version>
     <param.products.name>
       <item>MATLAB</item>
       <item>Image Processing Toolbox</item>
-      <item>Parallel Computing Toolbox</item>
     </param.products.name>
     <param.products.id>
-      <item>'1'</item>
-      <item>'17'</item>
-      <item>'80'</item>
+      <item>1</item>
+      <item>17</item>
     </param.products.id>
     <param.products.version>
-      <item>8.4</item>
       <item>9.1</item>
-      <item>6.5</item>
+      <item>9.5</item>
     </param.products.version>
     <param.platforms />
-    <param.output>${PROJECT_ROOT}/TomoTherapy Patient Archive DICOM Export.mlappinstall</param.output>
+    <param.output>/Users/mwgeurts/Documents/TomoTherapy/Archive DICOM Export Project/tomo_export</param.output>
     <param.guid>6f509843-c972-45bc-87cb-ed523e41b2eb</param.guid>
     <unset>
       <param.authnamewatermark />
@@ -35,6 +32,7 @@
       <param.icon />
       <param.icons />
       <param.platforms />
+      <param.output />
     </unset>
     <fileset.main>
       <file>${PROJECT_ROOT}/TomoExport.m</file>
@@ -68,11 +66,11 @@
     </fileset.resources>
     <fileset.package />
     <build-deliverables>
-      <file location="/Users/mwgeurts/Box Sync/TomoTherapy/Archive DICOM Export Project/tomo_export" name="TomoTherapy Patient Archive DICOM Export.mlappinstall" optional="false">/Users/mwgeurts/Box Sync/TomoTherapy/Archive DICOM Export Project/tomo_export/TomoTherapy Patient Archive DICOM Export.mlappinstall</file>
+      <file location="/Users/mwgeurts/Documents/TomoTherapy/Archive DICOM Export Project" name="tomo_export" optional="false">/Users/mwgeurts/Documents/TomoTherapy/Archive DICOM Export Project/tomo_export</file>
     </build-deliverables>
     <workflow />
     <matlab>
-      <root>/Applications/MATLAB_R2014b.app</root>
+      <root>/Applications/MATLAB_R2016b.app</root>
       <toolboxes />
     </matlab>
     <platform>
@@ -84,7 +82,7 @@
       <vista>false</vista>
       <linux>false</linux>
       <solaris>false</solaris>
-      <osver>10.10.3</osver>
+      <osver>10.12.1</osver>
       <os32>false</os32>
       <os64>true</os64>
       <arch>maci64</arch>
