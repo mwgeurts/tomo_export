@@ -58,7 +58,7 @@ warning('off','all');
 handles.output = hObject;
 
 % Set version handle
-handles.version = '1.1.0';
+handles.version = '1.2.0';
 
 % Determine path of current application
 [path, ~, ~] = fileparts(mfilename('fullpath'));
@@ -747,6 +747,9 @@ if ~isequal(path, 0)
 
     % Close waitbar
     close(progress);
+    
+    % Display message box
+    msgbox('DICOM export completed');
 else
     Event('No directory was selected for export');
 end
