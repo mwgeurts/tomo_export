@@ -58,7 +58,7 @@ warning('off','all');
 handles.output = hObject;
 
 % Set version handle
-handles.version = '1.2.0';
+handles.version = '1.2.2';
 
 % Determine path of current application
 [path, ~, ~] = fileparts(mfilename('fullpath'));
@@ -93,6 +93,7 @@ Event(string, 'INIT');
 %% Add Tomo archive extraction tools submodule
 % Add archive extraction tools submodule to search path
 addpath('./tomo_extract');
+% addpath('../../Archive Extraction Tools/tomo_extract'); % TESTING
 
 % Check if MATLAB can find CalcDose. This feature can be tested by
 % executing TomoExport('unitFindPlans')
@@ -109,6 +110,7 @@ end
 %% Add DICOM tools submodule
 % Add DICOM tools submodule to search path
 addpath('./dicom_tools');
+% addpath('../../../DICOM MATLAB Tools/dicom_tools'); % TESTING
 
 % Check if MATLAB can find WriteDICOMDose. This feature can be tested by
 % executing TomoExport('unitWriteDICOMDose')
@@ -459,7 +461,7 @@ waitbar(1.0, progress, 'Plan load completed');
 close(progress);
 
 % Clear temporary variables
-clear progress i;
+clear progress i prescription width;
 
 % Enable DICOM export button
 set(handles.dicom_button, 'Enable', 'on');
