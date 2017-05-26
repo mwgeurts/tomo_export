@@ -4,9 +4,6 @@
 [submodule "tomo_extract"]
 	path = tomo_extract
 	url = https://github.com/mwgeurts/tomo_extract
-[submodule "unit_harness"]
-	path = unit_harness
-	url = https://github.com/mwgeurts/unit_harness
 [submodule "tcs_plots"]
 	path = tcs_plots
 	url = https://github.com/mwgeurts/tcs_plots
