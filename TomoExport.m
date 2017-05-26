@@ -7,7 +7,7 @@ function varargout = TomoExport(varargin)
 % README for more information, including installation instructions.
 %
 % Author: Mark Geurts, mark.w.geurts@gmail.com
-% Copyright (C) 2015 University of Wisconsin Board of Regents
+% Copyright (C) 2017 University of Wisconsin Board of Regents
 %
 % This program is free software: you can redistribute it and/or modify it 
 % under the terms of the GNU General Public License as published by the  
@@ -58,7 +58,7 @@ warning('off','all');
 handles.output = hObject;
 
 % Set version handle
-handles.version = '1.2.2';
+handles.version = '1.2.3';
 
 % Determine path of current application
 [path, ~, ~] = fileparts(mfilename('fullpath'));
@@ -90,84 +90,20 @@ string = sprintf('%s\n', separator, string{:}, separator);
 % Log information
 Event(string, 'INIT');
 
-%% Add Tomo archive extraction tools submodule
-% Add archive extraction tools submodule to search path
-addpath('./tomo_extract');
-% addpath('../../Archive Extraction Tools/tomo_extract'); % TESTING
+% Log action
+Event('Loading configuration options');
 
-% Check if MATLAB can find CalcDose. This feature can be tested by
-% executing TomoExport('unitFindPlans')
-if exist('FindPlans', 'file') ~= 2 || (~isempty(varargin) && ...
-        strcmp(varargin{1}, 'unitFindPlans'))
-    
-    % If not, throw an error
-    Event(['The Archive Extraction Tools submodule does not exist in the ', ...
-        'search path. Use git clone --recursive or git submodule init ', ...
-        'followed by git submodule update to fetch all submodules'], ...
-        'ERROR');
-end
+% Execute ParseConfigOptions to load the global variables
+handles.config = ParseConfigOptions('config.txt');
 
-%% Add DICOM tools submodule
-% Add DICOM tools submodule to search path
-addpath('./dicom_tools');
-% addpath('../../../DICOM MATLAB Tools/dicom_tools'); % TESTING
+% Log action
+Event('Loading submodules');
 
-% Check if MATLAB can find WriteDICOMDose. This feature can be tested by
-% executing TomoExport('unitWriteDICOMDose')
-if exist('WriteDICOMDose', 'file') ~= 2 || (~isempty(varargin) && ...
-        strcmp(varargin{1}, 'unitWriteDICOMDose'))
-    
-    % If not, throw an error
-    Event(['The DICOM Tools submodule does not exist in the ', ...
-        'search path. Use git clone --recursive or git submodule init ', ...
-        'followed by git submodule update to fetch all submodules'], ...
-        'ERROR');
-end
+% Execute AddSubModulePaths to load all submodules
+AddSubModulePaths(handles);
 
-%% Initialize UI
-% Set version UI text
-set(handles.version_text, 'String', sprintf('Version %s', handles.version));
-
-% Disable plan selection dropdown (Patient data must be loaded first)
-set(handles.plan_select, 'String', 'Select Patient Plan');
-set(handles.plan_select, 'Enable', 'off');
-
-% Disable image viewer
-set(allchild(handles.dose_axes), 'visible', 'off'); 
-set(handles.dose_axes, 'visible', 'off');
-colorbar(handles.dose_axes, 'off');
-
-% Disable dose slider/TCS/alpha
-set(handles.dose_slider, 'visible', 'off');
-set(handles.tcs_button, 'visible', 'off');
-set(handles.alpha, 'visible', 'off');
-
-% Disable info table and export button (Patient data must be loaded first)
-set(handles.dicom_button, 'Enable', 'off');
-set(handles.plan_info, 'Enable', 'off');
-set(handles.plan_info, 'Data', cell(13, 2));
-
-%% Initialize global variables
-% Prefix for series description in written DICOM files. This prefix will be
-% followed by the plan name.
-handles.description = 'TomoTherapy Plan';
-Event(['DICOM series description set to ', handles.description]);
-
-% Default folder path when selecting input files
-handles.userpath = userpath;
-Event(['Default file path set to ', handles.userpath]);
-
-% Initialize unit test flag to false (don't run in Unit Test mode)
-handles.unitflag = 0;
-
-% Set the initial image view orientation to Transverse (T)
-handles.tcsview = 'T';
-Event('Default dose view set to Transverse');
-
-% Set the default transparency
-set(handles.alpha, 'String', '40%');
-Event(['Default dose view transparency set to ', ...
-    get(handles.alpha, 'String')]);
+% Initialize UI
+handles = InitializeUI(handles);
 
 %% Complete initialization
 % Report initilization status
@@ -214,116 +150,14 @@ function archive_browse_Callback(hObject, ~, handles)
 % Log event
 Event('Archive browse button selected');
 
-% If not executing in unit test
-if handles.unitflag == 0
-
-    % Request the user to select the Daily QA DICOM or XML
-    Event('UI window opened to select file');
-    [handles.name, handles.path] = uigetfile({'*_patient.xml', ...
-        'Patient Archive (*_patient.xml)'; '*.xml', ...
-        'Legacy Archive (*.xml)'}, 'Select the Archive Patient XML File', ...
-        handles.userpath);
-    
-else
-    
-    % Log unit test
-    Event('Retrieving stored name and path variables', 'UNIT');
-    handles.name = handles.unitname;
-    handles.path = handles.unitpath;
-end
-    
-% If the user selected a file
-if ~isequal(handles.name, 0)
-    
-    % Update default path
-    handles.userpath = handles.path;
-    Event(['Default file path updated to ', handles.path]);
-    
-    % Update archive_file text box
-    set(handles.archive_file, 'String', ...
-        fullfile(handles.path, handles.name));
-       
-    % Find plan build and database version
-    [handles.build, handles.db] = FindVersion(handles.path, handles.name);
-    
-    % If the database version is after 6 (when Tomo moved to characters)
-    if isletter(handles.db(1))
-    
-        % Retrieve all approved plan plan UIDs
-        handles.planUIDs = FindPlans(handles.path, handles.name);
-        
-        % Update plan dropdown menu
-        set(handles.plan_select, 'String', handles.planUIDs);
-        
-        % If at least 1 plan was found
-        if length(handles.planUIDs) >= 1
-            
-            % Update selected plan
-            set(handles.plan_select, 'Value', 1);
-            
-            % Enable dropdown menu
-            set(handles.plan_select, 'enable', 'on');
-            
-            % Execute plan_select
-            handles = ...
-                plan_select_Callback(handles.plan_select, '', handles);
-        
-        % Otherwise 
-        else
-            
-            % Warn user no plans were found
-            Event('No approved plans were found in the provided archive', ...
-                'ERROR');
-        end
-        
-    % Otherwise, if the database version is 2 or later
-    elseif str2double(handles.db(1)) >= 2
-        
-        % Retrieve all approved plan plan UIDs
-        handles.planUIDs = FindLegacyPlans(handles.path, handles.name);
-        
-        % Update plan dropdown menu
-        set(handles.plan_select, 'String', handles.planUIDs);
-        
-        % If at least 1 plan was found
-        if length(handles.planUIDs) >= 1
-            
-            % Update selected plan
-            set(handles.plan_select, 'Value', 1);
-            
-            % Enable dropdown menu
-            set(handles.plan_select, 'enable', 'on');
-            
-            % Execute plan_select
-            handles = ...
-                plan_select_Callback(handles.plan_select, '', handles);
-        
-        % Otherwise 
-        else
-            
-            % Warn user no plans were found
-            Event('No approved plans were found in the provided archive', ...
-                'ERROR');
-        end
-        
-    % Otherwise the file version is not supported   
-    else
-        
-        % Log error
-        Event(['Archive database version ', handles.db, ...
-            ' is not supported'], 'ERROR');
-    end
-    
-% Otherwise the user did not select a file
-else
-    Event('No archive file was selected');
-end
+% Execute BrowsePatientArchive
+handles = BrowsePatientArchive(handles);
 
 % Update handles structure
 guidata(hObject, handles);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function varargout = plan_select_Callback(hObject, ~, handles)
+function plan_select_Callback(hObject, ~, handles)
 % hObject    handle to plan_select (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -332,151 +166,11 @@ function varargout = plan_select_Callback(hObject, ~, handles)
 Event(sprintf('Plan UID %s selected to load', ...
     handles.planUIDs{get(hObject, 'Value')}));
 
-% Start waitbar
-progress = waitbar(0, 'Loading CT Image');
-
-% If the database version is after 6 (when Tomo moved to characters)
-if isletter(handles.db(1))
-
-    % Retrieve CT 
-    handles.image = LoadImage(handles.path, handles.name, ...
-        handles.planUIDs{get(hObject, 'Value')});
-    
-    % Update progress bar
-    waitbar(0.2, progress, 'Loading Delivery Plan');
-
-    % Retrieve Plan 
-    handles.plan = LoadPlan(handles.path, handles.name, ...
-        handles.planUIDs{get(hObject, 'Value')});
-    
-    % Update progress bar
-    waitbar(0.4, progress, 'Loading Structure Sets');
-    
-    % Retrieve Structures
-    handles.image.structures = LoadStructures(handles.path, handles.name, ...
-        handles.image);
-    
-    % Update progress bar
-    waitbar(0.6, progress, 'Loading Dose Image');
-    
-    % Retrieve Dose
-    handles.dose = LoadPlanDose(handles.path, handles.name, ...
-        handles.planUIDs{get(hObject, 'Value')});
-
-% Otherwise, if the database version is 2 or later
-elseif str2double(handles.db(1)) >= 2
-
-    % Retrieve CT 
-    handles.image = LoadLegacyImage(handles.path, handles.name, ...
-        handles.planUIDs{get(hObject, 'Value')});
-    
-    % Update progress bar
-    waitbar(0.2, progress, 'Loading Delivery Plan');
-
-    % Retrieve Plan 
-    handles.plan = LoadLegacyPlan(handles.path, handles.name, ...
-        handles.planUIDs{get(hObject, 'Value')});
-    
-    % Update progress bar
-    waitbar(0.4, progress, 'Loading Structure Sets');
-    
-    % Retrieve Structures
-    handles.image.structures = LoadLegacyStructures(handles.path, ...
-        handles.name, handles.image);
-    
-    % Update progress bar
-    waitbar(0.6, progress, 'Loading Dose Image');
-    
-    % Retrieve Dose
-    handles.dose = LoadPlanDose(handles.path, handles.name, ...
-        handles.planUIDs{get(hObject, 'Value')});
-    
-end
-
-% Update progress bar
-waitbar(0.8, progress, 'Updating Display');
-
-% Fill in missing data
-if ~isfield(handles.plan, 'patientBirthDate')
-    handles.plan.patientBirthDate = '';
-end
-if ~isfield(handles.plan, 'patientSex')
-    handles.plan.patientSex = '';
-end
-if ~isfield(handles.plan, 'machine')
-    handles.plan.machine = '';
-end
-if ~isfield(handles.plan, 'approver')
-    handles.plan.approver = '';
-end
-if isfield(handles.plan, 'frontField') && isfield(handles.plan, 'backField')
-    width = sprintf('%0.3f cm', ...
-        sum(abs([handles.plan.frontField, handles.plan.backField])));
-else
-    width = '';
-end
-if isfield(handles.plan, 'rxDose') && isfield(handles.plan, 'rxVolume') && ...
-        isfield(handles.plan, 'fractions')
-    prescription = sprintf('%0.1f%% to %0.1f Gy in %i fractions', ...
-        handles.plan.rxVolume, handles.plan.rxDose, ...
-        handles.plan.fractions);
-else
-    prescription = '';
-end
-
-% Update plan information table
-data = {    
-    'Patient Name'      handles.plan.patientName
-    'Patient ID'        handles.plan.patientID
-    'Birth Date'        datestr(datenum(handles.plan.patientBirthDate, ...
-                            'yyyymmdd'))
-    'Gender'            handles.plan.patientSex
-    'Machine'           handles.plan.machine
-    'Plan Name'         handles.plan.planLabel
-    'Plan Type'         handles.plan.planType
-    'Plan Date/Time'    datestr(handles.plan.timestamp)
-    'Approver'          handles.plan.approver
-    'Patient Position'  handles.image.position
-    'Prescription'      prescription
-    'Field Size'        width           
-    'Software Build'    handles.build
-};
-set(handles.plan_info, 'Data', data);
-set(handles.plan_info, 'Enable', 'on');
-
-% Initialize Dose Viewer
-InitializeViewer(handles.dose_axes, handles.tcsview, ...
-    sscanf(get(handles.alpha, 'String'), '%f%%')/100, handles.image, ...
-    handles.dose, handles.dose_slider);
-
-% Enable dose slider/TCS/alpha
-set(handles.dose_slider, 'visible', 'on');
-set(handles.tcs_button, 'visible', 'on');
-set(handles.alpha, 'visible', 'on');
-
-% Update waitbar
-waitbar(1.0, progress, 'Plan load completed');
-
-% Close waitbar
-close(progress);
-
-% Clear temporary variables
-clear progress i prescription width;
-
-% Enable DICOM export button
-set(handles.dicom_button, 'Enable', 'on');
-
-% If called through the UI, and not another function
-if nargout == 0
-    
-    % Update handles structure
-    guidata(hObject, handles);
-    
-else
-    
-    % Otherwise return the modified handles
-    varargout{1} = handles;
-end
+% Execute SelectPlan
+handles = SelectPlan(handles, get(hObject, 'Value'));
+  
+% Update handles structure
+guidata(hObject, handles);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function plan_select_CreateFcn(hObject, ~, ~)
@@ -484,6 +178,7 @@ function plan_select_CreateFcn(hObject, ~, ~)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
+% Set background to white
 if ispc && isequal(get(hObject,'BackgroundColor'), ...
         get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
@@ -495,15 +190,13 @@ function dose_slider_Callback(hObject, ~, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Round the current value to an integer value
-set(hObject, 'Value', round(get(hObject, 'Value')));
-
 % Log event
-Event(sprintf('Dose viewer slice set to %i', get(hObject,'Value')));
+Event(sprintf('Dose viewer slice set to %i', round(get(hObject,'Value'))));
 
-% Update viewer with current slice and transparency value
-UpdateViewer(get(hObject,'Value'), ...
-    sscanf(get(handles.alpha, 'String'), '%f%%')/100);
+% Update viewer with current slice
+if isfield(handles, 'tcsplot')
+    handles.tcsplot.Update('slice', round(get(hObject, 'Value')));
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function dose_slider_CreateFcn(hObject, ~, ~)
@@ -511,7 +204,7 @@ function dose_slider_CreateFcn(hObject, ~, ~)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
-% Hint: slider controls usually have a light gray background.
+% Slider controls usually have a light gray background.
 if isequal(get(hObject,'BackgroundColor'), ...
         get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor',[.9 .9 .9]);
@@ -542,7 +235,9 @@ Event(sprintf('Dose transparency set to %0.0f%%', value));
 set(hObject, 'String', sprintf('%0.0f%%', value));
 
 % Update viewer with current slice and transparency value
-UpdateViewer(get(handles.dose_slider,'Value'), value/100);
+if isfield(handles, 'tcsplot')
+    handles.tcsplot.Update('alpha', value/100);
+end
 
 % Clear temporary variable
 clear value;
@@ -585,9 +280,9 @@ switch handles.tcsview
 end
 
 % Re-initialize image viewer with new T/C/S value
-InitializeViewer(handles.dose_axes, handles.tcsview, ...
-    sscanf(get(handles.alpha, 'String'), '%f%%')/100, handles.image, ...
-    handles.dose, handles.dose_slider);
+if isfield(handles, 'tcsplot')
+    handles.tcsplot.Initialize('tcsview', handles.tcsview);
+end
 
 % Update handles structure
 guidata(hObject, handles);
@@ -601,163 +296,8 @@ function dicom_button_Callback(hObject, ~, handles)
 % Log event
 Event('DICOM export button selected');
 
-% If not executing in unit test
-if handles.unitflag == 0
-
-    % Prompt user to select save location
-    Event('UI window opened to select save folder location');
-    path = uigetdir(handles.userpath, ...
-        'Select Directory to Save DICOM Data');
-else
-    
-    % Log unit test
-    Event('Retrieving stored name and path variables', 'UNIT');
-    path = handles.unitexportpath;
-end
-
-% If the user chose a directory
-if ~isequal(path, 0)
-    
-    % Start waitbar
-    progress = waitbar(0, 'Initializing DICOM Export');
-    
-    % Update default path and log folder
-    handles.userpath = path;
-    Event(['DICOM files will be saved to ', path]);
-    
-    % Generate patient folder name from patient name
-    patientDir = regexprep(handles.plan.patientName, '[ \W]', '_');
-    
-    % Generate plan folder name from plan label
-    planDir = regexprep(handles.plan.planLabel, '[ \W]', '_');
-    
-    % Make patient/plan folders unless they already exist
-    if ~isdir(fullfile(path, patientDir, planDir))
-        mkdir(fullfile(path, patientDir, planDir));
-    end 
-    
-    % Store series and study descriptions
-    handles.plan.seriesDescription = handles.description;
-    Event(['DICOM series description set to ', ...
-        handles.plan.seriesDescription]);
-    handles.plan.studyDescription = handles.plan.planLabel;
-    Event(['DICOM series description set to ', ...
-        handles.plan.studyDescription]);
-    
-    % Store patient position from image
-    handles.plan.position = handles.image.position;
-    
-     % Generate unique series/study UIDs
-    Event('Generating unique series/study UIDs');
-    
-    % Generate study and series UIDs
-    handles.plan.studyUID = dicomuid;
-    handles.plan.seriesUID = dicomuid;
-
-    % Generate unique FOR instance UID
-    Event('Generating unique FOR UID');
-    handles.plan.frameRefUID = dicomuid;
-    
-    %% Export CT
-    % If the user provided a file location
-    if isfield(handles, 'image')
-
-        % Update progress bar
-        waitbar(0.1, progress, 'Exporting DICOM CT');
-        
-        % Make CT folder unless it already exists
-        if ~isdir(fullfile(path, patientDir, planDir, 'CT'))
-            mkdir(fullfile(path, patientDir, planDir, 'CT'));
-        end 
-        
-        % Write images to file, storing image UIDs
-        handles.plan.instanceUIDs = WriteDICOMImage(handles.image, ...
-            fullfile(path, patientDir, planDir, 'CT', 'CT'), handles.plan);
-        
-    % Otherwise no file was selected
-    else
-        Event('DICOM CT not saved as CT data not is present', 'WARN');
-    end
-
-    %% Export RTSS
-    % If the user provided a file location
-    if isfield(handles, 'image') && isfield(handles.image, 'structures')
-
-        % Update progress bar
-        waitbar(0.4, progress, 'Exporting DICOM RT Structure Set');
-
-        % Make structure set folder unless it already exists
-        if ~isdir(fullfile(path, patientDir, planDir, 'RTStruct'))
-            mkdir(fullfile(path, patientDir, planDir, 'RTStruct'));
-        end 
-        
-        % Write structure set to file, storing UID
-        handles.plan.structureSetUID = WriteDICOMStructures(...
-            handles.image.structures, fullfile(path, patientDir, planDir, ...
-            'RTStruct', 'RTStruct.dcm'), handles.plan);
-        
-    % Otherwise no file was selected
-    else
-        Event('DICOM RTSS not saved as RTSS data is not present', 'WARN');
-    end
-    
-    %% Export Plan
-    % If the user provided a file location
-    if isfield(handles, 'plan')
-
-        % Update progress bar
-        waitbar(0.9, progress, 'Exporting DICOM RT Plan');
-        
-        % Make plan folder unless it already exists
-        if ~isdir(fullfile(path, patientDir, planDir, 'RTPlan'))
-            mkdir(fullfile(path, patientDir, planDir, 'RTPlan'));
-        end 
-        
-        % Write plan to file, storing UID
-        handles.plan.planUID = WriteDICOMTomoPlan(handles.plan, ...
-            fullfile(path, patientDir, planDir, 'RTPlan', 'RTPlan.dcm'));
-        
-    % Otherwise no file was selected
-    else
-        Event('DICOM RT Plan not saved as plan data is not present', ...
-            'WARN');
-    end
-
-    %% Export Dose
-    % If the user provided a file location
-    if isfield(handles, 'dose')
-
-        % Update progress bar
-        waitbar(0.7, progress, 'Exporting DICOM Dose');
-        
-        % Make dose folder unless it already exists
-        if ~isdir(fullfile(path, patientDir, planDir, 'Dose'))
-            mkdir(fullfile(path, patientDir, planDir, 'Dose'));
-        end 
-        
-        % Write dose to file, storing UID
-        handles.plan.doseUID = WriteDICOMDose(handles.dose, fullfile(path, ...
-            patientDir, planDir, 'Dose', 'RTDose.dcm'), handles.plan);
-        
-    % Otherwise no file was selected
-    else
-        Event('DICOM Dose not saved as dose data is not present', 'WARN');
-    end
- 
-    % Update waitbar
-    waitbar(1.0, progress, 'DICOM export completed');
-
-    % Close waitbar
-    close(progress);
-    
-    % Display message box
-    msgbox('DICOM export completed');
-else
-    Event('No directory was selected for export');
-end
-
-% Clear temporary variables
-clear progress path;
+% Execute ExportDICOM
+handles = ExportDICOM(handles);
 
 % Update handles structure
 guidata(hObject, handles);
