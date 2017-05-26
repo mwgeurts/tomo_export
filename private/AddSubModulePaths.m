@@ -1,4 +1,4 @@
-function AddSubModulePaths(handles)
+function AddSubModulePaths()
 % AddSubModulePaths is called by TomoExport during initialization
 % to add all submodule paths and verify the submodule functions are
 % present.

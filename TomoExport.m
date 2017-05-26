@@ -100,7 +100,7 @@ handles.config = ParseConfigOptions('config.txt');
 Event('Loading submodules');
 
 % Execute AddSubModulePaths to load all submodules
-AddSubModulePaths(handles);
+AddSubModulePaths();
 
 % Initialize UI
 handles = InitializeUI(handles);

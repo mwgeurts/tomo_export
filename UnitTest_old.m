@@ -1,4 +1,4 @@
-function varargout = UnitTest(varargin)
+function varargout = UnitTest_old(varargin)
 % UnitTest executes the unit tests for this application, and can be called 
 % either independently (when testing just the latest version) or via 
 % UnitTestHarness (when testing for regressions between versions).  Either 

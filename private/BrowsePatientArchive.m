@@ -24,7 +24,8 @@ function handles = BrowsePatientArchive(handles)
 % with this program. If not, see http://www.gnu.org/licenses/.
 
 % If not executing in unit test
-if str2double(handles.config.UNIT_FLAG) == 0
+if ~isfield(handles.config, 'UNIT_FLAG') || ...
+        str2double(handles.config.UNIT_FLAG) == 0
 
     % Request the user to select the Daily QA DICOM or XML
     Event('UI window opened to select file');
@@ -37,8 +38,8 @@ else
     
     % Log unit test
     Event('Retrieving stored name and path variables', 'UNIT');
-    handles.name = handles.config.UNIT_FILE_NAME;
-    handles.path = handles.config.UNIT_FILE_PATH;
+    handles.name = handles.config.UNIT_NAME;
+    handles.path = handles.config.UNIT_PATH;
 end
     
 % If the user selected a file

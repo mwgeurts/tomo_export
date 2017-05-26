@@ -22,7 +22,8 @@ function handles = ExportDICOM(handles)
 % with this program. If not, see http://www.gnu.org/licenses/.
 
 % If not executing in unit test
-if str2double(handles.config.UNIT_FLAG) == 0
+if  ~isfield(handles.config, 'UNIT_FLAG') || ...
+        str2double(handles.config.UNIT_FLAG) == 0
 
     % Prompt user to select save location
     Event('UI window opened to select save folder location');
@@ -36,7 +37,7 @@ else
 end
 
 % If the user chose a directory
-if ~isequal(path, 0)
+if ~isequal(path, 0) && isdir(path)
     
     % Start waitbar
     progress = waitbar(0, 'Initializing DICOM Export');
