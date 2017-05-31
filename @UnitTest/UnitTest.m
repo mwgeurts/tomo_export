@@ -80,8 +80,14 @@ classdef UnitTest < matlab.unittest.TestCase
         % unit test checks. This array is used to write a traceability
         % matrix.
         testRequirements = {}
+        
+        % stats stores the profiler statistics
+        stats = []
+        
+        % version stores the tool version
+        version = '';
     end
- 
+    
     % Define test level setup functions
     methods(TestMethodSetup)
         
@@ -96,34 +102,39 @@ classdef UnitTest < matlab.unittest.TestCase
     % Define class level setup functions
     methods (TestClassSetup)
         ReadOriginalConfig(testCase)
+        StartProfiler(testCase)
     end
     
     % Define class level teardown functions
     methods (TestClassTeardown)
         WriteMarkdownReport(testCase)
         WriteTraceabilityMatrix(testCase)
+        StopProfiler(testCase)
     end
     
     % Define supporting methods
     methods (Static, Access = public)
         info = CPUInfo()
         info = MemInfo()
+        sl = SLOC(file)
         WriteConfigFile(filename, config)
         config = ReadConfigFile(filename)
         [image, dose] = LoadDICOMFiles(path)
     end
     
     % Define unit tests
-    methods(Test)
+    methods(Test, TestTags = {'Unit'})
         Test01(testCase)
         Test02(testCase)
         Test03(testCase)
-        Test04(testCase)
-        Test05(testCase)
-        Test06(testCase)
-        Test07(testCase)
-        Test08(testCase)
-        Test09(testCase)
+%         Test04(testCase)
+%         Test05(testCase)
+%         Test06(testCase)
+%         Test07(testCase)
+%         Test08(testCase)
+%         Test09(testCase)
+%         Test10(testCase)
+%         Test11(testCase)
     end
  
 end

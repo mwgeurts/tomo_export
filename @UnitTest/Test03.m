@@ -49,6 +49,10 @@ for i = 1:length(fList)
     end
 end
 
+% Log result
+Event(sprintf(['The resulting cumulative McCabe complexity for ', ...
+    'this tool: %i'], comp), 'UNIT');
+
 % Store the result
 testCase.testResults{3} = sprintf('%i', comp);
 

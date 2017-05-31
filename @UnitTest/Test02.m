@@ -58,6 +58,9 @@ for i = 1:length(fList)
     end
 end
 
+% Log result
+Event(sprintf('Number of code analyzer messages found: %i', mess), 'UNIT');
+
 % Store the result
 testCase.testResults{2} = sprintf('%i', mess);
 

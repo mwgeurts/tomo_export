@@ -73,9 +73,13 @@ pause(2);
 t = tic;
 testCase.figure = testCase.executable();
 time = toc(t);
-testCase.testSummaries{1} = sprintf('%0.1f sec', time);
+testCase.testResults{1} = sprintf('%0.1f sec', time);
 testCase.verifyInstanceOf(testCase.figure, 'matlab.ui.Figure');
 testCase.verifyLessThan(time, 2);
+
+% Store the tool version
+handles = guidata(testCase.figure);
+testCase.version = handles.version;
 
 %% CONDITION E
 handles = guidata(testCase.figure);

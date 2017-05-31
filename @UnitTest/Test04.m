@@ -94,7 +94,7 @@ for i = 1:size(testCase.inputData, 1)
     t = tic;
     callback(handles.archive_browse, handles);
     time = toc(t);
-    testCase.testSummaries{4}{i} = sprintf('%0.1f sec', time);
+    testCase.testResults{4}{i} = sprintf('%0.1f sec', time);
     testCase.verifyLessThan(time, 60);
     
     % Retrieve handles

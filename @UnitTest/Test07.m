@@ -17,6 +17,9 @@ function Test07(testCase)
 %
 % CONDITION B (-): The callback will return without error when no folder
 %   is provided
+%
+% CONDITION C (+): The DICOM Export callback executes in less than 200
+%   seconds
 
 % Log test
 Event('Executing unit test 7', 'UNIT');
@@ -66,7 +69,7 @@ for i = 1:size(testCase.inputData, 1)
     t = tic;
     callback(handles.dicom_button, handles);
     time = toc(t);
-    testCase.testSummaries{7}{i} = sprintf('%0.1f sec', time);
+    testCase.testResults{7}{i} = sprintf('%0.1f sec', time);
     testCase.verifyLessThan(time, 200);
 
     % Close file handle
