@@ -79,7 +79,7 @@ end
 for j = 1:length(reqs)
     fprintf(fid, '\n| %s |', reqs{j});
     for i = 1:length(tests)-1
-        if ~any(strcmp(strsplit(tests{i},','), reqs{j}))
+        if any(strcmp(strsplit(tests{i},','), reqs{j}))
             fprintf(fid, ' X  |');
         else
             fprintf(fid, '    |');
