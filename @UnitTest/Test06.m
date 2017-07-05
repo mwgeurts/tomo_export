@@ -4,7 +4,7 @@ function Test06(testCase)
 % DESCRIPTION: This unit test compares the parsed image, plan, structures,
 %   and dose information and compares it to an expected value.
 %
-% RELEVANT REQUIREMENTS: U008, F016
+% RELEVANT REQUIREMENTS: U008,F016
 %
 % INPUT DATA: Archive patient XML file (testCase.inputData), reference data
 %   (testCase.referenceData)
@@ -24,11 +24,14 @@ function Test06(testCase)
 Event('Executing unit test 6', 'UNIT');
 
 % Store test summary
-testCase.testSummaries{6} = 'Plan Information Parsed Correctly';
+testCase.StoreResults('summary', 'Plan Information Parsed Correctly');
 
 % Store test requirements
-testCase.testRequirements{6} = {'U008', 'F016'};
- 
+testCase.StoreResults('requirements', 'U008,F016');
+
+% Start with passing result
+result = 'Pass';
+
 % Loop through test archives
 for i = 1:size(testCase.inputData, 1)
 
@@ -63,7 +66,13 @@ for i = 1:size(testCase.inputData, 1)
     
     % Verify db, planUIDs match expected
     testCase.verifyEqual(handles.db, ref.db);
+    if ~isequal(handles.db, ref.db)
+        result = 'Fail';
+    end
     testCase.verifyEqual(handles.planUIDs, ref.planUIDs);
+    if ~isequal(handles.planUIDs, ref.planUIDs)
+        result = 'Fail';
+    end
     
     % Verify that all existing reference image fields match, excluding
     % structures and relative file names
@@ -73,6 +82,9 @@ for i = 1:size(testCase.inputData, 1)
                 ~contains(n{j}, 'file', 'IgnoreCase', true) && ...
                 ~contains(n{j}, 'path', 'IgnoreCase', true)
             testCase.verifyEqual(handles.image.(n{j}), ref.image.(n{j}));
+            if ~isequal(handles.image.(n{j}), ref.image.(n{j}))
+                result = 'Fail';
+            end
         end
     end
     
@@ -84,6 +96,10 @@ for i = 1:size(testCase.inputData, 1)
                     ~contains(m{k}, 'path', 'IgnoreCase', true)
                 testCase.verifyEqual(handles.image.structures{j}.(m{k}), ...
                     ref.image.structures{j}.(m{k}));
+                if ~isequal(handles.image.structures{j}.(m{k}), ...
+                    ref.image.structures{j}.(m{k}))
+                    result = 'Fail';
+                end
             end
         end
     end
@@ -94,6 +110,9 @@ for i = 1:size(testCase.inputData, 1)
         if ~contains(n{j}, 'file', 'IgnoreCase', true) && ...
                 ~contains(n{j}, 'path', 'IgnoreCase', true)
             testCase.verifyEqual(handles.plan.(n{j}), ref.plan.(n{j}));
+            if ~isequal(handles.plan.(n{j}), ref.plan.(n{j}))
+                result = 'Fail';
+            end
         end
     end
     
@@ -103,9 +122,15 @@ for i = 1:size(testCase.inputData, 1)
         if ~contains(n{j}, 'file', 'IgnoreCase', true) && ...
                 ~contains(n{j}, 'path', 'IgnoreCase', true)
             testCase.verifyEqual(handles.dose.(n{j}), ref.dose.(n{j}));
+            if ~isequal(handles.dose.(n{j}), ref.dose.(n{j}))
+                result = 'Fail';
+            end
         end
     end
     
     % Close file handle
     close(testCase.figure);
 end
+
+% Store result
+testCase.StoreResults('results', result);

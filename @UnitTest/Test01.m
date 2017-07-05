@@ -6,7 +6,7 @@ function Test01(testCase)
 %   required submodules do not exist and that the DICOM export button is 
 %   initially disabled. It also measures the time to open.
 %
-% RELEVANT REQUIREMENTS: U001, F001, F017, P001
+% RELEVANT REQUIREMENTS: U001,F001,F017,P001
 %
 % INPUT DATA: No input data required
 %
@@ -32,11 +32,10 @@ function Test01(testCase)
 Event('Executing unit test 1', 'UNIT');
 
 % Store test summary
-testCase.testSummaries{1} = 'Application Load';
+testCase.StoreResults('summary', 'Application Load');
 
 % Store test requirements
-testCase.testRequirements{1} = {'U001', 'F001', 'F017', 'C001', 'C002', ...
-    'C003', 'C004'};
+testCase.StoreResults('requirements', 'U001,F001,F017,P001');
 
 %% CONDITION B
 movefile tomo_extract tomo_extract_test
@@ -73,13 +72,9 @@ pause(2);
 t = tic;
 testCase.figure = testCase.executable();
 time = toc(t);
-testCase.testResults{1} = sprintf('%0.1f sec', time);
+testCase.StoreResults('results', sprintf('%0.1f sec', time));
 testCase.verifyInstanceOf(testCase.figure, 'matlab.ui.Figure');
 testCase.verifyLessThan(time, 2);
-
-% Store the tool version
-handles = guidata(testCase.figure);
-testCase.version = handles.version;
 
 %% CONDITION E
 handles = guidata(testCase.figure);

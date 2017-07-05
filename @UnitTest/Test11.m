@@ -4,7 +4,7 @@ function Test11(testCase)
 % DESCRIPTION: This unit test checks that a README file is present.  The
 % contents of the README are manually verified by the user.
 %
-% RELEVANT REQUIREMENTS: D001, D002 
+% RELEVANT REQUIREMENTS: D001,D002 
 %
 % INPUT DATA: No input data required
 %
@@ -14,16 +14,21 @@ function Test11(testCase)
 Event('Executing unit test 11', 'UNIT');
 
 % Store test summary
-testCase.testSummaries{11} = 'Documentation Exists';
+testCase.StoreResults('summary', 'Documentation Exists');
 
 % Store test requirements
-testCase.testRequirements{11} = {'D001', 'D002'};
+testCase.StoreResults('requirements', 'D001,D002');
 
 % Look for README.md
 fid = fopen('README.md', 'r');
 
 % If file handle was valid, record pass
 testCase.verifyGreaterThan(fid, 2);
+if fid > 2
+    testCase.StoreResults('results', 'Pass');
+else
+    testCase.StoreResults('results', 'Fail');
+end
 
 % Close file handle
 fclose(fid);

@@ -7,7 +7,7 @@ function Test09(testCase)
 %   dose DICOM files are compared (plan is not as it is known to not
 %   match). 
 %
-% RELEVANT REQUIREMENTS: F028, F029
+% RELEVANT REQUIREMENTS: F028,F029
 %
 % INPUT DATA: DICOM file exported from tool (testCase.exportPath), 
 %   reference DICOM files(testCase.dicomData)
@@ -51,10 +51,10 @@ function Test09(testCase)
 Event('Executing unit test 9', 'UNIT');
 
 % Store test summary
-testCase.testSummaries{9} = 'DICOM File RMS Difference';
+testCase.StoreResults('summary', 'DICOM File RMS Difference');
 
 % Store test requirements
-testCase.testRequirements{9} = {'F028', 'F029'};
+testCase.StoreResults('requirements', 'F028,F029');
 
 % Initialize array to store stats
 stats = zeros(size(testCase.dicomData, 1), 3);
@@ -271,6 +271,6 @@ for i = 1:size(testCase.inputData, 1)
 end
 
 % Record average RMS values across all datasets
-testCase.testResults{9}{1} = sprintf('%0.2f HU', mean(stats(:,1)));
-testCase.testResults{9}{2} = sprintf('%0.2f Gy', mean(stats(:,2)));
-testCase.testResults{9}{3} = sprintf('%0.2f voxels', mean(stats(:,3)));
+testCase.StoreResults('results', ...
+    sprintf('%0.2f HU<br>%0.2f Gy<br>%0.2f voxels', mean(stats(:,1)), ...
+    mean(stats(:,2)), mean(stats(:,3))));

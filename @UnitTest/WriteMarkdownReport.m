@@ -1,5 +1,26 @@
 function WriteMarkdownReport(testCase)
-
+% WriteMarkdownReport creates a Markdown report of the unit test results.
+% The report includes tables of test workstation specifications (operating 
+% system, processor, memory, etc.), test input files, reference data, test
+% results (stored via StoreResults('results')), and a code coverage report.
+% To bypass creating a report, leave the unit test class variable 
+% reportFile empty.
+%
+% Author: Mark Geurts, mark.w.geurts@gmail.com
+% Copyright (C) 2017 University of Wisconsin Board of Regents
+%
+% This program is free software: you can redistribute it and/or modify it 
+% under the terms of the GNU General Public License as published by the  
+% Free Software Foundation, either version 3 of the License, or (at your 
+% option) any later version.
+%
+% This program is distributed in the hope that it will be useful, but 
+% WITHOUT ANY WARRANTY; without even the implied warranty of 
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General 
+% Public License for more details.
+% 
+% You should have received a copy of the GNU General Public License along 
+% with this program. If not, see http://www.gnu.org/licenses/.
 
 %% Open Report File
 % If the report is empty, return without writing anything
@@ -129,11 +150,17 @@ clear v info;
 if exist('Event', 'file') == 2
     Event('Writing input data configuration', 'UNIT');
 end
-fprintf(fid, '\n## Input Data\n\n');
-fprintf(fid, ['The following test cases were used during unit testing. ', ...
-    'Where applicable, each unit test was run sequentially with each case. ', ...
-    'Reference data corresponding to each test case was used to confirm ', ...
-    'that the tool output matches the expected output.\n\n']);
+
+% If input data was used
+if ~isempty(testCase.inputData) || ~isempty(testCase.referenceData)
+
+    % Include an input data section
+    fprintf(fid, '\n## Input Data\n\n');
+    fprintf(fid, ['The following test cases were used during unit testing. ', ...
+        'Where applicable, each unit test was run sequentially with each case. ', ...
+        'Reference data corresponding to each test case was used to confirm ', ...
+        'that the tool output matches the expected output.\n\n']);
+end
 
 % If input data was used
 if ~isempty(testCase.inputData)
@@ -167,12 +194,22 @@ end
 if exist('Event', 'file') == 2
     Event('Writing test results', 'UNIT');
 end
-fprintf(fid, '\n## Test Results\n\n');
+fprintf(fid, '\n## Test Results\n\n\n');
 
+% Start results table
+fprintf(fid, '| Test | Summary | Result |\n');
+fprintf(fid, '|------|---------|--------|\n');
 
+% Retrieve summaries and results
+summaries = testCase.StoreResults('summary');
+results = testCase.StoreResults('results');
 
-
-
+% Loop through summaries
+for i = 1:(min(length(summaries),length(results))-1)
+    
+    % Write summary and results
+    fprintf(fid, '| %i | %s | %s |\n', i, summaries{i}, results{i});
+end
 
 %% Write Code Coverage
 % Initialize file list with currentApp
@@ -195,7 +232,7 @@ for i = 1:length(f)
     [path, name, ~] = fileparts(f{i});
 
     % Store file name and relative path
-    fList{length(fList)+1} = [strrep(path, cwd, ''), name];
+    fList{length(fList)+1} = [strrep(path, pwd, ''), name];
 end
 
 % Remove duplicates
@@ -224,7 +261,7 @@ for i = 1:size(testCase.stats.FunctionTable, 1)
     [path, name, ~] = fileparts(testCase.stats.FunctionTable(i).FileName);
 
     % Save the relative path
-    relname = [strrep(path, cwd, ''), name];
+    relname = [strrep(path, [pwd, '/'], ''), '/', name];
     
     % Loop through the file list
     for j = 1:length(fList)
@@ -269,7 +306,7 @@ fprintf(fid, ['The following table lists the percentage of code evaluated ', ...
     'application.\n\n']);
 
 % Print table header row
-fprintf(fid, '| Function | %s |\n', testCase.version);
+fprintf(fid, '| Function | Coverage |\n');
 
 % Print a separator row
 fprintf(fid, '|----------|----------|');

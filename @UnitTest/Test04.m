@@ -7,8 +7,8 @@ function Test04(testCase)
 %   selecting input data. The time necessary to load the file is also
 %   checked.
 %
-% RELEVANT REQUIREMENTS: U002, U003, U004, U005, U006, F002, F003, F006, 
-%   F016, F017, C005, C006, C007, C008, C009, P002
+% RELEVANT REQUIREMENTS: U002,U003,U004,U005,U006,F002,F003,F006, 
+%   F016,F017,C005,C006,C007,C008,C009,P002
 %
 % INPUT DATA: Archive patient XML file (testCase.inputData)
 %
@@ -27,12 +27,11 @@ function Test04(testCase)
 Event('Executing unit test 4', 'UNIT');
 
 % Store test summary
-testCase.testSummaries{4} = 'Archive Browse Time';
+testCase.StoreResults('summary', 'Archive Browse Time');
 
 % Store test requirements
-testCase.testRequirements{4} = {'U002', 'U003', 'U004', 'U005', 'U006', ...
-    'F002', 'F003', 'F006', 'F016', 'F017', 'C005', 'C006', 'C007', 'C008', ...
-    'C009', 'P002'};
+testCase.StoreResults('requirements', ['U002,U003,U004,U005,U006,F002,', ...
+    'F003,F006,F016,F017,C005,C006,C007,C008,C009,P002']);
 
 %% CONDITION B
 % Add unit flag and dummy archive path/name
@@ -67,6 +66,8 @@ end
 close(testCase.figure);
  
 %% CONDITIONS A, C, D
+results = cell(1,size(testCase.inputData, 1));
+
 % Loop through test archives
 for i = 1:size(testCase.inputData, 1)
 
@@ -94,7 +95,7 @@ for i = 1:size(testCase.inputData, 1)
     t = tic;
     callback(handles.archive_browse, handles);
     time = toc(t);
-    testCase.testResults{4}{i} = sprintf('%0.1f sec', time);
+    results{i} = sprintf('%0.1f sec', time);
     testCase.verifyLessThan(time, 60);
     
     % Retrieve handles
@@ -106,3 +107,6 @@ for i = 1:size(testCase.inputData, 1)
     % Close file handle
     close(testCase.figure);
 end
+
+% Store results
+testCase.StoreResults('results', strjoin(results, '<br>'));

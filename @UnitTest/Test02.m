@@ -16,10 +16,10 @@ function Test02(testCase)
 Event('Executing unit test 2', 'UNIT');
 
 % Store test summary
-testCase.testSummaries{2} = 'Code Analyzer Messages';
+testCase.StoreResults('summary', 'Code Analyzer Messages');
 
 % Store test requirements
-testCase.testRequirements{2} = {'P004'};
+testCase.StoreResults('requirements', 'P004');
 
 % Search for required functions
 fList = matlab.codetools.requiredFilesAndProducts(...
@@ -62,7 +62,7 @@ end
 Event(sprintf('Number of code analyzer messages found: %i', mess), 'UNIT');
 
 % Store the result
-testCase.testResults{2} = sprintf('%i', mess);
+testCase.StoreResults('results', sprintf('%i', mess));
 
 % Verify message counter is zero
 testCase.verifyEqual(mess, 0);

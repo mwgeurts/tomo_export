@@ -7,8 +7,7 @@ function Test07(testCase)
 %   of a user selecting an export folder.  The time necessary to write the 
 %   files is also checked.
 %
-% RELEVANT REQUIREMENTS: U009, U010, U011, F018, F019, F020, F021, F022,
-%   P003
+% RELEVANT REQUIREMENTS: U009,U010,U011,F018,F019,F020,F021,F022,P003
 %
 % INPUT DATA: path to export DICOM images to (testCase.exportPath)
 %
@@ -25,12 +24,15 @@ function Test07(testCase)
 Event('Executing unit test 7', 'UNIT');
 
 % Store test summary
-testCase.testSummaries{7} = 'DICOM Export Write Time';
+testCase.StoreResults('summary', 'DICOM Export Write Time');
 
 % Store test requirements
-testCase.testRequirements{7} = {'U009', 'U010', 'U011', 'F018', 'F019', ...
-    'F020', 'F021', 'F022', 'P003'};
- 
+testCase.StoreResults('requirements', ['U009,U010,U011,F018,F019,F020,', ...
+    'F021,F022,P003']);
+
+% Initialize results
+results = cell(1, size(testCase.inputData, 1));
+
 % Loop through test archives
 for i = 1:size(testCase.inputData, 1)
 
@@ -69,9 +71,12 @@ for i = 1:size(testCase.inputData, 1)
     t = tic;
     callback(handles.dicom_button, handles);
     time = toc(t);
-    testCase.testResults{7}{i} = sprintf('%0.1f sec', time);
+    results{i} = sprintf('%0.1f sec', time);
     testCase.verifyLessThan(time, 200);
 
     % Close file handle
     close(testCase.figure);
 end
+
+% Store result
+testCase.StoreResults('results', strjoin(results, '<br>'));

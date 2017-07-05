@@ -7,8 +7,7 @@ function Test05(testCase)
 %   the transparency, axis, and slice selection UI features work
 %   accordingly.
 %
-% RELEVANT REQUIREMENTS: U007, F008, F009, F010, F011, F012, F013, F014,
-%   F015
+% RELEVANT REQUIREMENTS: U007,F008,F009,F010,F011,F012,F013,F014,F015
 %
 % INPUT DATA: Archive patient XML file (testCase.inputData)
 
@@ -16,11 +15,11 @@ function Test05(testCase)
 Event('Executing unit test 5', 'UNIT');
 
 % Store test summary
-testCase.testSummaries{5} = 'CT/Structure/Dose Viewer Functional';
+testCase.StoreResults('summary', 'CT/Structure/Dose Viewer Functional');
 
 % Store test requirements
-testCase.testRequirements{5} = {'U007', 'F008', 'F009', 'F010', 'F011', ...
-    'F012', 'F013', 'F014', 'F015'};
+testCase.StoreResults('requirements', ['U007,F008,F009,F010,F011,F012,', ...
+    'F013,F014,F015']);
 
 % Separate into file parts
 [path, name, ext] = fileparts(fullfile(testCase.inputData{end,2}));
@@ -47,22 +46,40 @@ callback = get(handles.archive_browse, 'Callback');
 % Execute browse
 callback(handles.archive_browse, handles);
 
+% Start with pass result
+result = 'Pass';
+
 % Prompt user to verify that the TCS display works
 prompt = questdlg(['Does the TCS display the expected CT image, structures, ', ...
     'and dose?'], 'Unit Test', 'Yes', 'No', 'Yes');
 testCase.verifyEqual(prompt, 'Yes');
+if ~strcmp(prompt, 'Yes')
+    result = 'Fail';
+end
 
 % Prompt user to verify that the alpha works
 prompt = questdlg('Does the transparency input function correctly?', ...
     'Unit Test', 'Yes', 'No', 'Yes');
 testCase.verifyEqual(prompt, 'Yes');
+if ~strcmp(prompt, 'Yes')
+    result = 'Fail';
+end
 
 % Prompt user to verify that the TCS button works
 prompt = questdlg('Does the TCS button function correctly?', ...
     'Unit Test', 'Yes', 'No', 'Yes');
 testCase.verifyEqual(prompt, 'Yes');
+if ~strcmp(prompt, 'Yes')
+    result = 'Fail';
+end
 
 % Prompt user to verify that the slider works
 prompt = questdlg('Does the slice selection slider function correctly?', ...
     'Unit Test', 'Yes', 'No', 'Yes');
 testCase.verifyEqual(prompt, 'Yes');
+if ~strcmp(prompt, 'Yes')
+    result = 'Fail';
+end
+
+% Store results
+testCase.StoreResults('results', result);

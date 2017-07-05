@@ -15,10 +15,10 @@ function Test03(testCase)
 Event('Executing unit test 3', 'UNIT');
 
 % Store test summary
-testCase.testSummaries{3} = 'Cumulative Cyclomatic Complexity';
+testCase.StoreResults('summary', 'Cumulative Cyclomatic Complexity');
 
 % Store test requirements
-testCase.testRequirements{3} = {'P005'};
+testCase.StoreResults('requirements', 'P005');
 
 % Search for required functions
 fList = matlab.codetools.requiredFilesAndProducts(...
@@ -54,7 +54,7 @@ Event(sprintf(['The resulting cumulative McCabe complexity for ', ...
     'this tool: %i'], comp), 'UNIT');
 
 % Store the result
-testCase.testResults{3} = sprintf('%i', comp);
+testCase.StoreResults('results', sprintf('%i', comp));
 
 % Verify complexity is less than limit
 testCase.verifyLessThan(comp, 1000);

@@ -4,7 +4,7 @@ function Test10(testCase)
 % DESCRIPTION: This is unit test verifies that the plan drop down menu
 %   functions correctly and that each plan can be loaded successfully.
 %
-% RELEVANT REQUIREMENTS: U012, F004, F005, F007
+% RELEVANT REQUIREMENTS: U012,F004,F005,F007
 %
 % INPUT DATA: No input data required
 %
@@ -18,11 +18,14 @@ function Test10(testCase)
 Event('Executing unit test 10', 'UNIT');
 
 % Store test summary
-testCase.testSummaries{10} = 'Plan Selection Menu Functions Correctly';
+testCase.StoreResults('summary', 'Plan Selection Menu Functions Correctly');
 
 % Store test requirements
-testCase.testRequirements{10} = {'U012', 'F004', 'F005', 'F007'};
- 
+testCase.StoreResults('requirements', 'U012,F004,F005,F007');
+
+% Start with passing result
+result = 'Pass';
+
 % Loop through test archives
 for i = 1:size(testCase.inputData, 1)
 
@@ -68,8 +71,14 @@ for i = 1:size(testCase.inputData, 1)
         
         % Verify DICOM button is active
         testCase.verifyEqual(lower(get(handles.dicom_button, 'Enable')), 'on');
+        if ~isequal(lower(get(handles.dicom_button, 'Enable')), 'on')
+            result = 'Fail';
+        end
     end
 
     % Close file handle
     close(testCase.figure);
 end
+
+% Store result
+testCase.StoreResults('results', result);

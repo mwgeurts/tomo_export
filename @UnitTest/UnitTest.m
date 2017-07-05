@@ -1,30 +1,34 @@
 classdef UnitTest < matlab.unittest.TestCase
+% UnitTest is a modular test case class for MATLAB applications. 
+% When executed via runtests(), this class will automatically run a series
+% of unit tests against the specified executable, and create Markdown 
+% reports summarizing the results. The MATLAB profiler is turned on during 
+% unit test execution to quantify the code coverage.
+%
+% Author: Mark Geurts, mark.w.geurts@gmail.com
+% Copyright (C) 2017 University of Wisconsin Board of Regents
+%
+% This program is free software: you can redistribute it and/or modify it 
+% under the terms of the GNU General Public License as published by the  
+% Free Software Foundation, either version 3 of the License, or (at your 
+% option) any later version.
+%
+% This program is distributed in the hope that it will be useful, but 
+% WITHOUT ANY WARRANTY; without even the implied warranty of 
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General 
+% Public License for more details.
+% 
+% You should have received a copy of the GNU General Public License along 
+% with this program. If not, see http://www.gnu.org/licenses/.
 
     % Define UnitTest class properties
     properties
-        
-        % figure stores the application UI handle. It is used during
-        % teardown to close the figure
-        figure = [];
-        
-        % config stores a structure of config file contents
-        config = struct
-        
-        % configOriginal stores a duplicate copy of the original config
-        % file contents, to return the config file to its original state
-        configOriginal = struct
-        
+               
         % executable stores the name of the application
         executable = @TomoExport
         
         % configFile stores the name of the config file relative path
         configFile = 'config.txt'
-        
-        % reportFile stores the name of the markdown report file
-        reportFile = '../test_reports/unit_test_report.md'
-        
-        % traceMatrix stores the name of the markdown traceability matrix
-        traceMatrix = '../test_reports/unit_trace_matrix.md'
         
         % inputData stores a cell array of patient archives that will be
         % tested during these unit tests
@@ -64,28 +68,26 @@ classdef UnitTest < matlab.unittest.TestCase
             'Anon_0005'     '../test_data/Reference DICOM/Anon_0005'
             'Anon_0006'     '../test_data/Reference DICOM/Anon_0006'
         }
-    
-        % testSummaries stores a cell array that is populated with summary
-        % statements from each test. This array is used to write the
-        % results to the markdown report.
-        testSummaries = {}
         
-        % testResults stores a cell array of numeric or string results for
-        % each unit test, to be written in the test results table of the
-        % markdown report. If left empty, the unit test pass or fail
-        % results will be listed.
-        testResults = {}
+        % figure stores the application UI handle. It is used during
+        % teardown to close the figure
+        figure = [];
         
-        % testRequirements stores a cell array of requirements that each
-        % unit test checks. This array is used to write a traceability
-        % matrix.
-        testRequirements = {}
+        % config stores a structure of config file contents
+        config = struct
         
-        % stats stores the profiler statistics
-        stats = []
+        % configOriginal stores a duplicate copy of the original config
+        % file contents, to return the config file to its original state
+        configOriginal = struct
         
-        % version stores the tool version
-        version = '';
+        % reportFile stores the name of the markdown report file
+        reportFile = '../test_reports/unit_test_report.md'
+        
+        % traceMatrix stores the name of the markdown traceability matrix
+        traceMatrix = '../test_reports/unit_trace_matrix.md'
+        
+        % stats store the profiler results
+        stats = [];
     end
     
     % Define test level setup functions
@@ -120,6 +122,7 @@ classdef UnitTest < matlab.unittest.TestCase
         WriteConfigFile(filename, config)
         config = ReadConfigFile(filename)
         [image, dose] = LoadDICOMFiles(path)
+        varargout = StoreResults(varargin)
     end
     
     % Define unit tests
@@ -127,14 +130,13 @@ classdef UnitTest < matlab.unittest.TestCase
         Test01(testCase)
         Test02(testCase)
         Test03(testCase)
-%         Test04(testCase)
-%         Test05(testCase)
-%         Test06(testCase)
-%         Test07(testCase)
-%         Test08(testCase)
-%         Test09(testCase)
-%         Test10(testCase)
-%         Test11(testCase)
+        Test04(testCase)
+        Test05(testCase)
+        Test06(testCase)
+        Test07(testCase)
+        Test08(testCase)
+        Test09(testCase)
+        Test10(testCase)
+        Test11(testCase)
     end
- 
 end
