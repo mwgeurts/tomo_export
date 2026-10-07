@@ -9,7 +9,7 @@ The TomoTherapy&reg; Patient Archive DICOM Export Tool reads in a patient archiv
 
 ## Installation
 
-This application can be installed as a MATLAB App or by cloning this git repository.  See [Installation and Use](../../wiki/Installation-and-Use) for more details.
+This application can be installed by cloning this git repository.  See [Installation and Use](../../wiki/Installation-and-Use) for more details.
 
 ## Usage and Documentation
 
