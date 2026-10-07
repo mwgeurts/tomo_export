@@ -37,7 +37,7 @@ else
 end
 
 % If the user chose a directory
-if ~isequal(path, 0) && isdir(path)
+if ~isequal(path, 0) && isfolder(path)
     
     % Start waitbar
     progress = waitbar(0, 'Initializing DICOM Export');
@@ -53,7 +53,7 @@ if ~isequal(path, 0) && isdir(path)
     planDir = regexprep(handles.plan.planLabel, '[ \W]', '_');
     
     % Make patient/plan folders unless they already exist
-    if ~isdir(fullfile(path, patientDir, planDir))
+    if ~isfolder(fullfile(path, patientDir, planDir))
         mkdir(fullfile(path, patientDir, planDir));
     end 
     
@@ -75,9 +75,147 @@ if ~isequal(path, 0) && isdir(path)
     handles.plan.studyUID = dicomuid;
     handles.plan.seriesUID = dicomuid;
 
-    % Generate unique FOR instance UID
-    Event('Generating unique FOR UID');
+    %Cyril: replace with the next block, which ensures coherent 
+    %frameofreference for two plans -> Eclipse can sum them
+    %Event('Generating unique FOR UID');
+    %handles.plan.frameRefUID = dicomuid;
+    %% Generate or reuse Frame of Reference UID
+%
+% Cyril:
+% Store FrameOfReferenceUID values in a registry located in the patient
+% export directory. If another plan uses exactly the same CT geometry,
+% reuse the existing FrameOfReferenceUID so that Eclipse can associate
+% and sum the dose distributions.
+
+Event('Determining Frame of Reference UID');
+
+% Registry file shared by all exported plans of this patient
+forRegistryFile = fullfile(path, patientDir, ...
+    'FrameOfReferenceRegistry.mat');
+
+% Default behaviour: generate a new FrameOfReferenceUID
+reuseFrameOfReference = false;
+
+% Continue only if CT image geometry is available
+if isfield(handles, 'image') && ...
+        isfield(handles.image, 'start') && ...
+        isfield(handles.image, 'width') && ...
+        isfield(handles.image, 'data')
+
+    % Current CT geometry
+    currentGeometry.start = double(handles.image.start(:)');
+    currentGeometry.width = double(handles.image.width(:)');
+    currentGeometry.size = double(size(handles.image.data));
+
+    % Ensure that the size vector always contains three dimensions
+    if length(currentGeometry.size) < 3
+        currentGeometry.size(3) = 1;
+    end
+
+    % Store patient position as part of the geometry
+    if isfield(handles.plan, 'position') && ...
+            ~isempty(handles.plan.position)
+        currentGeometry.position = upper(char(handles.plan.position));
+    else
+        currentGeometry.position = 'HFS';
+    end
+
+    % Load an existing registry, if available
+    if exist(forRegistryFile, 'file') == 2
+
+        registryData = load(forRegistryFile, 'forRegistry');
+
+        if isfield(registryData, 'forRegistry')
+            forRegistry = registryData.forRegistry;
+        else
+            forRegistry = struct([]);
+        end
+
+    else
+        forRegistry = struct([]);
+    end
+
+    % Numerical tolerance used when comparing CT coordinates, in cm
+    geometryTolerance = 1e-6;
+
+    % Look for an existing entry with the same CT geometry
+    for registryIndex = 1:length(forRegistry)
+
+        sameStart = ...
+            length(forRegistry(registryIndex).start) == ...
+            length(currentGeometry.start) && ...
+            all(abs(forRegistry(registryIndex).start - ...
+            currentGeometry.start) < geometryTolerance);
+
+        sameWidth = ...
+            length(forRegistry(registryIndex).width) == ...
+            length(currentGeometry.width) && ...
+            all(abs(forRegistry(registryIndex).width - ...
+            currentGeometry.width) < geometryTolerance);
+
+        sameSize = isequal(...
+            forRegistry(registryIndex).size, ...
+            currentGeometry.size);
+
+        samePosition = strcmpi(...
+            forRegistry(registryIndex).position, ...
+            currentGeometry.position);
+
+        if sameStart && sameWidth && sameSize && samePosition
+
+            handles.plan.frameRefUID = ...
+                forRegistry(registryIndex).frameRefUID;
+
+            reuseFrameOfReference = true;
+
+            Event(['Reusing existing Frame of Reference UID: ', ...
+                handles.plan.frameRefUID]);
+
+            break;
+        end
+    end
+
+    % If no matching geometry was found, create a new registry entry
+    if ~reuseFrameOfReference
+
+        handles.plan.frameRefUID = dicomuid;
+
+        newRegistryIndex = length(forRegistry) + 1;
+
+        forRegistry(newRegistryIndex).start = ...
+            currentGeometry.start;
+
+        forRegistry(newRegistryIndex).width = ...
+            currentGeometry.width;
+
+        forRegistry(newRegistryIndex).size = ...
+            currentGeometry.size;
+
+        forRegistry(newRegistryIndex).position = ...
+            currentGeometry.position;
+
+        forRegistry(newRegistryIndex).frameRefUID = ...
+            handles.plan.frameRefUID;
+
+        % Save the updated registry
+        save(forRegistryFile, 'forRegistry');
+
+        Event(['Generated new Frame of Reference UID: ', ...
+            handles.plan.frameRefUID]);
+
+        Event(['Saved Frame of Reference registry to ', ...
+            forRegistryFile]);
+    end
+
+else
+
+    % Fallback if CT geometry is unavailable
     handles.plan.frameRefUID = dicomuid;
+
+    Event(['CT geometry unavailable. Generated new Frame of ', ...
+        'Reference UID: ', handles.plan.frameRefUID], 'WARN');
+end
+%%End of Generate or reuse Frame of Reference UID
     
     %% Export CT
     % If the user provided a file location
@@ -87,7 +225,7 @@ if ~isequal(path, 0) && isdir(path)
         waitbar(0.1, progress, 'Exporting DICOM CT');
         
         % Make CT folder unless it already exists
-        if ~isdir(fullfile(path, patientDir, planDir, 'CT'))
+        if ~isfolder(fullfile(path, patientDir, planDir, 'CT'))
             mkdir(fullfile(path, patientDir, planDir, 'CT'));
         end 
         
@@ -108,12 +246,16 @@ if ~isequal(path, 0) && isdir(path)
         waitbar(0.4, progress, 'Exporting DICOM RT Structure Set');
 
         % Make structure set folder unless it already exists
-        if ~isdir(fullfile(path, patientDir, planDir, 'RTStruct'))
+        if ~isfolder(fullfile(path, patientDir, planDir, 'RTStruct'))
             mkdir(fullfile(path, patientDir, planDir, 'RTStruct'));
         end 
         
+        %Cyril: pass CT geometry to the RTStruct writer
+        handles.plan.imageStart = handles.image.start;
+        handles.plan.imageWidth = handles.image.width;
+
         % Write structure set to file, storing UID
-        handles.plan.structureSetUID = WriteDICOMStructures(...
+                handles.plan.structureSetUID = WriteDICOMStructures(...
             handles.image.structures, fullfile(path, patientDir, planDir, ...
             'RTStruct', 'RTStruct.dcm'), handles.plan);
         
@@ -130,7 +272,7 @@ if ~isequal(path, 0) && isdir(path)
         waitbar(0.9, progress, 'Exporting DICOM RT Plan');
         
         % Make plan folder unless it already exists
-        if ~isdir(fullfile(path, patientDir, planDir, 'RTPlan'))
+        if ~isfolder(fullfile(path, patientDir, planDir, 'RTPlan'))
             mkdir(fullfile(path, patientDir, planDir, 'RTPlan'));
         end 
         
@@ -152,7 +294,7 @@ if ~isequal(path, 0) && isdir(path)
         waitbar(0.7, progress, 'Exporting DICOM Dose');
         
         % Make dose folder unless it already exists
-        if ~isdir(fullfile(path, patientDir, planDir, 'Dose'))
+        if ~isfolder(fullfile(path, patientDir, planDir, 'Dose'))
             mkdir(fullfile(path, patientDir, planDir, 'Dose'));
         end 
         
